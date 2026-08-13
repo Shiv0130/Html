@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TV Program Schedule</title>
+
+    <style>
+        /*Setting properties for table*/
+        table, tr, td{
+            border: 2px solid;
+            border-collapse: collapse;
+        }
+
+        .normal{
+            width: 2cm;
+        }
+
+        .heading{
+            background-color:gold;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .theBigOne{
+            vertical-align: top;
+            text-align: left;
+        }
+
+        .times{
+            vertical-align: top;
+            padding-left: 1mm;
+            padding-top: 2mm;
+            padding-bottom: 8mm;
+            padding-right: 1mm;
+        }
+    </style>
+</head>
+<body>
+    <table>
+        <!--1st row-->
+        <tr class="heading">
+            <td>Time</td>
+            <td>Monday</td>
+            <td>Tuesday</td>
+            <td>Wednesday</td>
+            <td>Thursday</td>
+            <td>Friday</td>
+            <td>Saturday</td>
+            <td>Sunday</td>
+        </tr>
+
+        <!--2nd row-->
+        <tr>
+            <td class="times">6:00</td>
+            <td class="normal">National News</td>
+            <td class="normal">National News</td>
+            <td class="normal">National News</td>
+            <td class="normal">National News</td>
+            <td class="normal">National News</td>
+            <td class="normal">National News</td>
+            <td class="normal">National News</td>
+        </tr>
+
+        <!--3rd row-->
+        <tr>
+            <td class="times">6:30</td>
+            <td class="normal">World News</td>
+            <td class="normal">World News</td>
+            <td class="normal">World News</td>
+            <td class="normal">World News</td>
+            <td class="normal">World News</td>
+            <td class="normal">World News</td>
+            <td class="normal">World News</td>
+        </tr>
+
+        <!--4th row-->
+        <tr>
+            <td class="times">7:00</td>
+            <td rowspan="2" style="vertical-align: top;" class="normal">Opera Fest</td><!--rowspan to "merge" rows-->
+            <td rowspan="2" style="vertical-align: top;" class="normal">Radio U</td>
+            <td rowspan="2" style="vertical-align: top;" class="normal">Science Week</td>
+            <td rowspan="2" style="vertical-align: top;" class="normal">The Living World</td>
+            <td class="normal">Word Play</td>
+            <td class="normal">Agri-Week</td>
+            <td rowspan="2" class="normal">Folk Fest</td>
+        </tr>
+
+        <!--5th row-->
+        <tr>
+            <td class="times">7:30</td>
+            <td class="normal">Brain Stew</td>
+            <td class="normal">Bismarck Forum</td>
+        </tr>
+
+        <!--6th row-->
+        <tr>
+            <td class="times">8:00</td>
+            <td class="theBigOne" rowspan="4" colspan="4">The Classical Music Connection</td><!--colspan to "merge" columns-->
+            <td>Old Time Radio</td>
+            <td rowspan="4" style="vertical-align: top; width: 2cm;" class="normal">Saturday Nite Jazz</td>
+            <td rowspan="4" style="vertical-align: top; width: 2cm;" class="normal">The Indie Connection</td>
+        </tr>
+
+        <!--7th row-->
+        <tr>
+            <td class="times">8:30</td>
+            <td class="normal">The Inner Mind</td>
+        </tr>
+
+        <!--8th row-->
+        <tr>
+            <td class="times">9:00</td>
+            <td rowspan="2" style="vertical-align: top;" class="normal">Open Mike Nite</td>
+        </tr>
+
+        <!--9th row-->
+        <tr>
+            <td class="times">9:30</td>
+        </tr>
+
+        <!--10th row-->
+        <tr>
+            <td class="times">10:00</td>
+            <td class="normal">World News Feed</td>
+            <td class="normal">World News Feed</td>
+            <td class="normal">World News Feed</td>
+            <td class="normal">World News Feed</td>
+            <td class="normal">World News Feed</td>
+            <td class="normal">World News Feed</td>
+            <td class="normal">World News Feed</td>
+        </tr>
+    </table>
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order</title>
+
+    <style>
+        /*Setting properties for table*/
+        table,
+        tr,
+        td {
+            border: 1px solid;
+            border-collapse: separate; /formats border/
+        }
+
+        .quantity {
+            border: 5px double; /* creates an "extra" border around component*/
+        }
+
+        .moveOne {
+            margin-left: 1.1cm;
+        }
+
+        .moveTwo {
+            margin-left: 2.3cm;
+        }
+
+        .inputDetails {
+            margin-bottom: 1mm;
+        }
+    </style>
+    
+</head>
+
+<!--Using components and calling classes from CSS-->
+<body>
+    <div style="width: 100%;">
+        <h1 style="color: rgb(53, 53, 222);">Order Form</h1>
+        <form>
+            <label for="Name" class="labelDetails" style="margin-left: 5.5mm;">Name: </label>
+            <input type="text" class="inputDetails" style="width: 6.3cm;">
+
+            <br>
+
+            <label for="Email" class="labelDetails" style="margin-left: 5.4mm;">Email: </label>
+            <input type="text" class="inputDetails" style="width: 6.3cm;">
+
+            <br>
+
+            <div style="display: flex; align-items: center;">
+                <label for="Address" class="labelDetails" style="margin-left: 1.7mm;">Address: </label>
+                <textarea type="text" class="inputDetails"
+                    style="width: 5.7cm; height: 2cm; margin-left: 2mm;"></textarea>
+            </div>
+
+            <label for="Postcode" class="labelDetails">Postcode: </label>
+            <input type="text" class="inputDetails">
+
+            <br><br><br>
+
+            <table>
+                <tr style="font-weight: bold;">
+                    <td>Product</td>
+                    <td>Part Number</td>
+                    <td>Quantity</td>
+                    <td>Price</td>
+                    <td>Total</td>
+                </tr>
+
+                <tr>
+                    <td>Tires</td><!--Product-->
+                    <td>LB190</td><!--Part number-->
+                    <td class="quantity">4</td><!--Quantity-->
+                    <td>R5</td><!--Price-->
+                    <td><input type="text" value="R"></td><!--Total-->
+                </tr>
+
+                <tr>
+                    <td>Gear Box</td><!--Product-->
+                    <td>LV330</td><!--Part number-->
+                    <td class="quantity">7</td><!--Quantity-->
+                    <td>R10</td><!--Price-->
+                    <td><input type="text" value="R"></td><!--Total-->
+                </tr>
+
+                <tr>
+                    <td>Car Seats</td><!--Product-->
+                    <td>BE300</td><!--Part number-->
+                    <td class="quantity">7</td><!--Quantity-->
+                    <td>R15</td><!--Price-->
+                    <td><input type="text" value="R"></td><!--Total-->
+                </tr>
+
+                <tr>
+                    <td>Windscreen</td><!--Product-->
+                    <td>LB400</td><!--Part number-->
+                    <td class="quantity">5</td><!--Quantity-->
+                    <td>R20</td><!--Price-->
+                    <td><input type="text" value="R"></td><!--Total-->
+                </tr>
+
+                <tr>
+                    <td>Mags</td><!--Product-->
+                    <td>LB500</td><!--Part number-->
+                    <td class="quantity">54</td><!--Quantity-->
+                    <td>R30</td><!--Price-->
+                    <td><input type="text" value="R"></td><!--Total-->
+                </tr>
+
+                <tr>
+                    <td colspan="6" style="text-align: right;">Total:<input type="text" value="R"></td>
+                </tr>
+            </table>
+
+            <br>
+
+            <p><b>Credit Card Details</b> <br> Card Type: </p>
+            <div>
+                <input name="cardType" type="radio" value="masterCard">
+                <label for="masterCard">Mastercard</label>
+
+                <label for="cardNumber" class="moveOne">Card Number: </label>
+                <!--Goes next to previous input and label-->
+                <input type="text" style="width: 4.5cm; margin-bottom: 1mm;">
+
+                <br>
+
+                <input name="cardType" type="radio" value="visa">
+                <label for="visa">Visa</label>
+
+                <label for="expiryDate" class="moveTwo">Expiry Date:
+                </label><!--Goes next to previous input and label-->
+                <input type="text" placeholder="mm/yy" style="margin-left: 2mm; width: 2.5cm;">
+
+                <br>
+
+                <input name="cardType" type="radio" value="americanExpress">
+                <label for="americanExpress">American Express</label>
+
+                <br>
+
+                <input name="cardType" type="radio" value="dinersClub">
+                <label for="dinersClub">Diners Club</label>
+            </div>
+
+            <br><br>
+
+            <div style="display: flex; align-items: center;">
+                <label for="deliveryAddress"><b>Delivery Address:</b></label>
+                <textarea type="text" style="width: 5.7cm; height: 2cm; margin-left: 1mm;"></textarea>
+            </div>
+
+            <br><br>
+
+            <div>
+                <button>Send order</button>
+                <input type="reset" value="Clear form">
+            </div>
+        </form>
+    </div>
+
+</body>
+
+</html>

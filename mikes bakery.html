@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+     
+    <title>Mike's Bakery</title>
+    <style>
+     /*Setting properties of the body tag*/
+        body{
+            background-image: url('ChocolateCake.jpg');
+            background-size: cover;
+       }
+       /*Setting a navbar component for the page*/
+        .navbar {
+            background-color:#834333;
+            overflow: hidden;
+       }
+       /*Setting navbar components with the anchor tag*/
+       .navbar a {
+            float: left;
+            font-size: 16px;
+            color: white;
+            text-align: right;
+            padding: 14px 16px;
+            text-decoration: none;
+       }
+       /*Setting a dropdown component*/
+        .dropdown {
+            float: left;
+            overflow: hidden;
+       }
+       /*Setting a dropbtn component to dropdown component*/
+       .dropdown .dropbtn {
+            font-size: 16px;
+            border: none;
+            outline: none;
+            color: white;
+            padding: 14px 16px;
+            background-color: #834333;
+            font-family: inherit;
+            margin: 0;
+       }
+
+       /*Putting all the navbar,anchor tag,dropdown and dropbtn component together*/
+       .navbar a:hover,
+       .dropdown:hover .dropbtn{
+           background-color: #D2B48C;
+       }
+       /*Setting properties of dropdown content */
+        .dropdown-content{
+            display: none;
+            position: absolute;
+            background-color: #834333;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0, 0.2);
+            z-index: 1;
+       }
+       /*Setting properties of dropdown content with anchor tag */
+       .dropdown-content a {
+            float: none;
+            color: white;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            text-align: left;
+       }
+       /*Setting properties of anchor tag with dropdown*/
+       .dropdown-content a:hover{
+            background-color: #D2B48C;
+       }
+       /*Putting all the components together*/
+       .dropdown:hover .dropdown-content {
+            display: block;
+       }
+       /*Setting the img tag for the logo*/
+
+       img{
+        float: left;
+        background-color: #834333;
+
+
+       }
+       /*Settting properties of  h3 tag*/
+
+       h3{
+
+        color:white;
+        background-color: #834333;
+
+
+       }
+/*Set classes and call HTML*/
+       .right{
+
+          float: right;
+/*Set classes and call HTML*/
+       }
+       .left{
+          float: left;
+       }
+
+    </style>
+</head>
+<body>
+     <!--Introducing the navbar attribtute -->
+    <div class="navbar">
+     <!--Setting position of the h3 tag with content -->
+<div class="left">
+<h3><a href="#">Mike's Bakery</a></h3>
+</div>
+<!--Setting position of the anchor tags with hyperlinks -->
+<div class="right">
+  <a href="index.html" class="a.split">Home</a>
+  <div class="dropdown">
+    <button class="dropbtn">Event Cakes
+      <i class="fa fa-caret-down"></i>
+    </button>
+    <div class="dropdown-content">
+      <a href="birthday.html">Birthday</a>
+      <a href="everyday.html">Everyday</a>
+      <a href="wedding.html">Wedding</a>
+	  <a href="kids.html">Kids</a>
+    </div> 
+  </div>
+	<a href="desserts.html">Desserts</a>
+	<a href="contacts.html">Contact</a>
+	<a href="feedback.html">Feedback</a>
+</div>
+</div>
+<!--Setting position of the img tag with content -->
+<div class="logo">
+<img src="Chocolate_cake.jfif"/>
+</div>
+
+</body>
+</html>
+
+       
+      

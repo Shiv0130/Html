@@ -1,0 +1,78 @@
+<!Doctype html>
+<html>
+<head>
+<!--e.g. "tutorials/ cooking / IT"-->
+<meta http-equiv="Type of content"  content="text/html"; charset="UTF-8"/>
+<title>Page Layout</title>
+<style>
+ <!-- Inline styling, if any, 
+ would go here-->
+ html, body {
+ height:100%;
+ }
+ body{
+ display:flex;
+ flex-wrap: wrap;
+ margin: 0;
+ }
+ 
+ .header-menu, footer {
+ display: flex;
+ align-items: center;
+ width: 100%;
+ }
+ 
+ aside{
+ flex: 0.4;
+ height: 165px;
+ padding-left: 15px;
+ }
+ 
+ footer{
+ text-align: center;
+ }
+ 
+ h2 {
+ color: red;
+ }
+</style> 
+</head>
+<body>
+<header class="header-menu">
+<!--
+Contains / will display content that
+appears at the very top of the webpage
+-->
+<nav>
+<ul>
+<li>Home</li>
+<li>About</li>
+<li>Contact</li>
+</ul>
+</nav>
+</header>
+<section>
+<article>
+<!--
+Will specify self-contained content
+-->
+</article>
+<!--
+will define a specific section of your 
+HTML document
+-->
+</section>
+<aside>
+<!--
+refers to content that is not part of the
+"main" content
+-->
+<h2>Cars</h2>
+<p>Cars are blah blah blah</p>
+</aside>
+<footer>
+<p> Will display items at the bottom of the 
+page. &copy; DIT 2023</p>
+</footer>
+</body>
+</html>
