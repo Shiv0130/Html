@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Logic Circuit Diagram – F = A′C + (B′+ A′D)(BC · A′D)′</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Times+New+Roman&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #f0ede6;
+    font-family: 'Crimson Pro', 'Times New Roman', serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 30px 20px;
+  }
+
+  .page {
+    background: #ffffff;
+    width: 900px;
+    min-height: 700px;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.10);
+    border: 1px solid #ccc;
+    padding: 40px 50px 50px 50px;
+    position: relative;
+  }
+
+  /* Subtle ruled lines like Word */
+  .page::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent 27px,
+      #e8e4dc 27px,
+      #e8e4dc 28px
+    );
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  .header {
+    text-align: center;
+    border-bottom: 2px solid #222;
+    padding-bottom: 12px;
+    margin-bottom: 18px;
+    position: relative;
+  }
+
+  .header h1 {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .header .question {
+    font-size: 13px;
+    margin-top: 4px;
+    color: #333;
+  }
+
+  .formula-box {
+    border: 1.5px solid #333;
+    background: #fafaf7;
+    padding: 10px 18px;
+    margin-bottom: 22px;
+    display: inline-block;
+    position: relative;
+    font-size: 15px;
+  }
+
+  .formula-box .label {
+    position: absolute;
+    top: -10px;
+    left: 10px;
+    background: #fff;
+    padding: 0 6px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .formula-center {
+    text-align: center;
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #999;
+    padding-bottom: 4px;
+    position: relative;
+  }
+
+  .breakdown {
+    font-size: 13px;
+    line-height: 2;
+    margin-bottom: 20px;
+    padding-left: 10px;
+    position: relative;
+  }
+
+  .breakdown table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  .breakdown td {
+    padding: 2px 8px;
+    font-size: 13px;
+  }
+
+  .breakdown td:first-child {
+    font-weight: 600;
+    color: #444;
+    width: 60px;
+  }
+
+  canvas {
+    display: block;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .canvas-wrap {
+    position: relative;
+    margin-bottom: 16px;
+  }
+
+  .footer-note {
+    font-size: 12px;
+    color: #555;
+    text-align: center;
+    margin-top: 16px;
+    font-style: italic;
+    position: relative;
+    border-top: 1px solid #ccc;
+    padding-top: 10px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <h1>Mathematics 511 – Assignment</h1>
+    <div class="question">Question 1.3 – Logic Circuit Diagram</div>
+  </div>
+
+  <div class="formula-center">
+    <div class="formula-box">
+      <span class="label">Boolean Formula</span>
+      <strong>F = A′C + (B′ + A′D)(BC · A′D)′</strong>
+    </div>
+  </div>
+
+  <div class="section-title" style="position:relative;">Expression Breakdown</div>
+  <div class="breakdown">
+    <table>
+      <tr><td>Gate 1:</td><td>A′ &nbsp;→&nbsp; NOT A</td></tr>
+      <tr><td>Gate 2:</td><td>A′C &nbsp;→&nbsp; AND(NOT A, C)</td></tr>
+      <tr><td>Gate 3:</td><td>B′ &nbsp;→&nbsp; NOT B</td></tr>
+      <tr><td>Gate 4:</td><td>A′D &nbsp;→&nbsp; AND(NOT A, D)</td></tr>
+      <tr><td>Gate 5:</td><td>B′ + A′D &nbsp;→&nbsp; OR(NOT B, AND(NOT A, D))</td></tr>
+      <tr><td>Gate 6:</td><td>BC &nbsp;→&nbsp; AND(B, C)</td></tr>
+      <tr><td>Gate 7:</td><td>BC · A′D &nbsp;→&nbsp; AND(AND(B,C), AND(NOT A, D))</td></tr>
+      <tr><td>Gate 8:</td><td>(BC · A′D)′ &nbsp;→&nbsp; NOT(Gate 7)</td></tr>
+      <tr><td>Gate 9:</td><td>(B′ + A′D)(BC · A′D)′ &nbsp;→&nbsp; AND(Gate 5, Gate 8)</td></tr>
+      <tr><td>Gate 10:</td><td><strong>F</strong> &nbsp;→&nbsp; OR(Gate 2, Gate 9)</td></tr>
+    </table>
+  </div>
+
+  <div class="section-title" style="position:relative;">Circuit Diagram</div>
+
+  <div class="canvas-wrap">
+    <canvas id="circuit" width="800" height="520"></canvas>
+  </div>
+
+  <div class="footer-note">
+    Circuit constructed using standard logic gate notation · NOT gates shown as triangles with bubble · AND/OR gates shown in IEEE style
+  </div>
+
+</div>
+
+<script>
+const canvas = document.getElementById('circuit');
+const ctx = canvas.getContext('2d');
+
+ctx.font = '13px "Crimson Pro", "Times New Roman", serif';
+ctx.strokeStyle = '#111';
+ctx.lineWidth = 1.5;
+
+// ─── helpers ────────────────────────────────────────────────
+function line(x1,y1,x2,y2){ ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); }
+
+function label(text,x,y,align='left',bold=false){
+  ctx.save();
+  ctx.font = (bold?'bold ':'') + '13px "Crimson Pro","Times New Roman",serif';
+  ctx.fillStyle='#111';
+  ctx.textAlign=align;
+  ctx.textBaseline='middle';
+  ctx.fillText(text,x,y);
+  ctx.restore();
+}
+
+function inputLabel(text,x,y){
+  ctx.save();
+  ctx.font='bold 13px "Crimson Pro","Times New Roman",serif';
+  ctx.fillStyle='#1a1a6e';
+  ctx.textAlign='right';
+  ctx.textBaseline='middle';
+  ctx.fillText(text,x,y);
+  ctx.restore();
+}
+
+// NOT gate: triangle + bubble, inputs on left, output on right
+function drawNOT(cx,cy,w=32,h=24){
+  // triangle
+  ctx.beginPath();
+  ctx.moveTo(cx,cy-h/2);
+  ctx.lineTo(cx,cy+h/2);
+  ctx.lineTo(cx+w,cy);
+  ctx.closePath();
+  ctx.fillStyle='#f0f4ff';
+  ctx.fill();
+  ctx.stroke();
+  // bubble
+  ctx.beginPath();
+  ctx.arc(cx+w+5,cy,5,0,Math.PI*2);
+  ctx.fillStyle='#fff';
+  ctx.fill();
+  ctx.stroke();
+  return {inX:cx, inY:cy, outX:cx+w+10, outY:cy};
+}
+
+// AND gate
+function drawAND(cx,cy,w=40,h=30){
+  ctx.beginPath();
+  ctx.moveTo(cx,cy-h/2);
+  ctx.lineTo(cx+w*0.5,cy-h/2);
+  ctx.arc(cx+w*0.5,cy,h/2,-Math.PI/2,Math.PI/2);
+  ctx.lineTo(cx,cy+h/2);
+  ctx.closePath();
+  ctx.fillStyle='#f0fff4';
+  ctx.fill();
+  ctx.stroke();
+  return {inX:cx, inY1:cy-h/4, inY2:cy+h/4, outX:cx+w, outY:cy};
+}
+
+// OR gate
+function drawOR(cx,cy,w=44,h=30){
+  ctx.beginPath();
+  ctx.moveTo(cx+8,cy-h/2);
+  ctx.quadraticCurveTo(cx+w*0.55,cy-h/2, cx+w,cy);
+  ctx.quadraticCurveTo(cx+w*0.55,cy+h/2, cx+8,cy+h/2);
+  ctx.quadraticCurveTo(cx+20,cy, cx+8,cy-h/2);
+  ctx.closePath();
+  ctx.fillStyle='#fffbf0';
+  ctx.fill();
+  ctx.stroke();
+  return {inX:cx+10, inY1:cy-h/4, inY2:cy+h/4, outX:cx+w, outY:cy};
+}
+
+// dot junction
+function dot(x,y){ ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2); ctx.fillStyle='#111'; ctx.fill(); }
+
+// ─── layout ─────────────────────────────────────────────────
+// columns x positions
+const col0 = 30;   // input labels end
+const col1 = 90;   // NOT gates start
+const col2 = 190;  // first AND gates
+const col3 = 300;  // OR / second AND
+const col4 = 410;  // final AND / NOT
+const col5 = 520;  // final AND before OR
+const col6 = 630;  // final OR → F
+
+// row y positions
+const rA   = 60;
+const rAnC = 110;
+const rB   = 180;
+const rBnD = 230;
+const rD   = 310;
+const rBC  = 380;
+const rAnD2= 430;
+const rNAND= 470;
+const mid  = 290; // final output row
+
+// ── draw inputs ─────────────────────────────────────────────
+['A','B','C','D'].forEach((ch,i)=>{
+  const y = [rA, rB, rAnC-20, rD][i];
+  // We'll place them differently; just draw labels at far left
+});
+
+// ─────────────────────────────────────────────────────────────
+// PART 1: A′C  (top path)
+// ─────────────────────────────────────────────────────────────
+
+// NOT A  gate
+const notA = drawNOT(col1, rA);
+inputLabel("A", col1-8, rA);
+line(col1-8+1, rA, notA.inX, rA); // wire from label to gate (tiny)
+
+// wire A′ out → AND gate input 1
+const andAC = drawAND(col2, rAnC);
+line(notA.outX, notA.outY, notA.outX+10, notA.outY);
+line(notA.outX+10, notA.outY, notA.outX+10, andAC.inY1);
+line(notA.outX+10, andAC.inY1, andAC.inX, andAC.inY1);
+
+// C input → AND gate input 2
+inputLabel("C", andAC.inX-8, andAC.inY2);
+line(andAC.inX-8+1, andAC.inY2, andAC.inX, andAC.inY2);
+
+// label A′C output wire
+line(andAC.outX, andAC.outY, col6-4, andAC.outY);
+label("A′C", andAC.outX+4, andAC.outY-8, 'left');
+
+// ─────────────────────────────────────────────────────────────
+// PART 2: B′ + A′D  (middle path)
+// ─────────────────────────────────────────────────────────────
+
+// NOT B gate
+const notB = drawNOT(col1, rB);
+inputLabel("B", col1-8, rB);
+line(col1-8+1, rB, notB.inX, rB);
+
+// A′D AND gate (reuse A′ from notA)
+const andAnD = drawAND(col2, rBnD);
+// wire A′ down to andAnD input1
+line(notA.outX+10, notA.outY, notA.outX+10, andAnD.inY1);
+dot(notA.outX+10, andAnD.inY1);
+line(notA.outX+10, andAnD.inY1, andAnD.inX, andAnD.inY1);
+
+// D input → andAnD input2
+inputLabel("D", andAnD.inX-8, andAnD.inY2);
+line(andAnD.inX-8+1, andAnD.inY2, andAnD.inX, andAnD.inY2);
+
+// OR gate: B′ + A′D
+const orBnAnD = drawOR(col3, (rB+rBnD)/2);
+// B′ → OR input 1
+line(notB.outX, notB.outY, orBnAnD.inX, notB.outY);
+line(orBnAnD.inX, notB.outY, orBnAnD.inX, orBnAnD.inY1);
+
+// A′D → OR input 2
+line(andAnD.outX, andAnD.outY, andAnD.outX+10, andAnD.outY);
+line(andAnD.outX+10, andAnD.outY, andAnD.outX+10, orBnAnD.inY2);
+line(andAnD.outX+10, orBnAnD.inY2, orBnAnD.inX, orBnAnD.inY2);
+label("B′+A′D", orBnAnD.outX+2, orBnAnD.outY-9,'left');
+
+// ─────────────────────────────────────────────────────────────
+// PART 3: (BC · A′D)′  (bottom path)
+// ─────────────────────────────────────────────────────────────
+
+// BC AND gate
+const andBC = drawAND(col2, rBC);
+// B input
+inputLabel("B", andBC.inX-8, andBC.inY1);
+line(andBC.inX-8+1, andBC.inY1, andBC.inX, andBC.inY1);
+// C input
+inputLabel("C", andBC.inX-8, andBC.inY2);
+line(andBC.inX-8+1, andBC.inY2, andBC.inX, andBC.inY2);
+
+// A′D AND gate (second instance, reuse A′)
+const andAnD2 = drawAND(col2, rAnD2);
+line(notA.outX+10, notA.outY, notA.outX+10, andAnD2.inY1);
+dot(notA.outX+10, andAnD2.inY1);
+line(notA.outX+10, andAnD2.inY1, andAnD2.inX, andAnD2.inY1);
+inputLabel("D", andAnD2.inX-8, andAnD2.inY2);
+line(andAnD2.inX-8+1, andAnD2.inY2, andAnD2.inX, andAnD2.inY2);
+
+// BC · A′D AND gate
+const andBCAnD = drawAND(col3, (rBC+rAnD2)/2);
+line(andBC.outX, andBC.outY, andBC.outX+10, andBC.outY);
+line(andBC.outX+10, andBC.outY, andBC.outX+10, andBCAnD.inY1);
+line(andBC.outX+10, andBCAnD.inY1, andBCAnD.inX, andBCAnD.inY1);
+line(andAnD2.outX, andAnD2.outY, andAnD2.outX+12, andAnD2.outY);
+line(andAnD2.outX+12, andAnD2.outY, andAnD2.outX+12, andBCAnD.inY2);
+line(andAnD2.outX+12, andBCAnD.inY2, andBCAnD.inX, andBCAnD.inY2);
+
+// NOT gate for (BC·A′D)′
+const notBCAnD = drawNOT(col4, andBCAnD.outY);
+line(andBCAnD.outX, andBCAnD.outY, notBCAnD.inX, andBCAnD.outY);
+label("(BC·A′D)′", notBCAnD.outX+2, notBCAnD.outY-9,'left');
+
+// ─────────────────────────────────────────────────────────────
+// PART 4: (B′+A′D) · (BC·A′D)′
+// ─────────────────────────────────────────────────────────────
+const andFinal1 = drawAND(col5, (orBnAnD.outY + notBCAnD.outY)/2);
+
+// OR output → AND input 1
+line(orBnAnD.outX, orBnAnD.outY, orBnAnD.outX+10, orBnAnD.outY);
+line(orBnAnD.outX+10, orBnAnD.outY, orBnAnD.outX+10, andFinal1.inY1);
+line(orBnAnD.outX+10, andFinal1.inY1, andFinal1.inX, andFinal1.inY1);
+
+// NOT output → AND input 2
+line(notBCAnD.outX, notBCAnD.outY, notBCAnD.outX+10, notBCAnD.outY);
+line(notBCAnD.outX+10, notBCAnD.outY, notBCAnD.outX+10, andFinal1.inY2);
+line(notBCAnD.outX+10, andFinal1.inY2, andFinal1.inX, andFinal1.inY2);
+
+// ─────────────────────────────────────────────────────────────
+// PART 5: Final OR → F
+// ─────────────────────────────────────────────────────────────
+const finalOR = drawOR(col6, (andAC.outY + andFinal1.outY)/2);
+
+// A′C wire → OR input 1
+line(andAC.outX, andAC.outY, andAC.outX+10, andAC.outY);
+const jx = col6-2;
+line(andAC.outX+10, andAC.outY, jx, andAC.outY);
+line(jx, andAC.outY, jx, finalOR.inY1);
+line(jx, finalOR.inY1, finalOR.inX, finalOR.inY1);
+
+// Final AND → OR input 2
+line(andFinal1.outX, andFinal1.outY, andFinal1.outX+10, andFinal1.outY);
+line(andFinal1.outX+10, andFinal1.outY, jx+4, andFinal1.outY);
+line(jx+4, andFinal1.outY, jx+4, finalOR.inY2);
+line(jx+4, finalOR.inY2, finalOR.inX, finalOR.inY2);
+
+// F output
+line(finalOR.outX, finalOR.outY, finalOR.outX+20, finalOR.outY);
+ctx.save();
+ctx.font='bold 15px "Crimson Pro","Times New Roman",serif';
+ctx.fillStyle='#8b0000';
+ctx.textBaseline='middle';
+ctx.fillText('F', finalOR.outX+22, finalOR.outY);
+ctx.restore();
+
+// ─── gate labels ────────────────────────────────────────────
+function gLabel(text,x,y){
+  ctx.save();
+  ctx.font='10px "Crimson Pro","Times New Roman",serif';
+  ctx.fillStyle='#555';
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+  ctx.fillText(text,x,y);
+  ctx.restore();
+}
+
+gLabel('NOT',  col1+16, rA+18);
+gLabel('AND',  col2+20, rAnC+20);
+gLabel('NOT',  col1+16, rB+18);
+gLabel('AND',  col2+20, rBnD+20);
+gLabel('OR',   col3+22, (rB+rBnD)/2+20);
+gLabel('AND',  col2+20, rBC+20);
+gLabel('AND',  col2+20, rAnD2+20);
+gLabel('AND',  col3+20, (rBC+rAnD2)/2+20);
+gLabel('NOT',  col4+16, andBCAnD.outY+18);
+gLabel('AND',  col5+20, andFinal1.outY+20);
+gLabel('OR',   col6+22, finalOR.outY+18);
+
+</script>
+</body>
+</html>

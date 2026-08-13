@@ -1,0 +1,965 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Audio Visualizer + Synced Transcript</title>
+<style>
+  :root{
+    --bg:#0f1724; --panel:#0b1220; --text:#e6eef8; --muted:#9fb0c8;
+    --s1:#4A90E2; --s2:#E24A68; --accent:#00E5A8;
+  }
+  [data-theme="light"]{ --bg:#f6f9fc; --panel:#ffffff; --text:#071422; --muted:#4b6b82; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;height:100vh;display:flex;flex-direction:column}
+  header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.03)}
+  .brand{display:flex;gap:12px;align-items:center}
+  .logo{width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,var(--s1),var(--accent));display:flex;align-items:center;justify-content:center;font-weight:700}
+  main{flex:1;display:flex;gap:18px;padding:18px}
+  .left{flex:1;display:flex;flex-direction:column;gap:12px}
+  .controls{display:flex;gap:10px;align-items:center}
+  input[type=file]{display:none}
+  .btn{background:var(--panel);color:var(--text);border:1px solid rgba(255,255,255,0.03);padding:8px 12px;border-radius:8px;cursor:pointer}
+  .btn:active{transform:translateY(1px)}
+  .player{display:flex;align-items:center;gap:12px}
+  audio{width:100%}
+
+  /* visualizer card */
+  .viz{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);border-radius:12px;padding:12px;border:1px solid rgba(255,255,255,0.03);display:flex;flex-direction:column;gap:8px}
+  #canvasWrap{position:relative;border-radius:8px;overflow:hidden;background:#000;height:260px}
+  canvas{width:100%;height:100%;display:block}
+  .legend{display:flex;justify-content:space-between;align-items:center;padding:8px 4px}
+  .legend .scale{font-size:12px;color:var(--muted)}
+
+  /* transcript */
+  .right{width:420px;max-width:42%;display:flex;flex-direction:column;gap:12px}
+  .panel{background:var(--panel);padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);max-height:calc(100vh - 160px);overflow:auto}
+  .transcript-line{padding:10px;border-radius:8px;margin-bottom:8px;transition:all .2s ease;border-left:4px solid transparent}
+  .speaker-1{color:var(--s1);border-left-color:var(--s1);background:linear-gradient(90deg, rgba(74,144,226,0.06), transparent)}
+  .speaker-2{color:var(--s2);border-left-color:var(--s2);background:linear-gradient(90deg, rgba(226,74,104,0.05), transparent)}
+  .current{transform:scale(1.02);box-shadow:0 6px 18px rgba(2,6,23,0.6);background:linear-gradient(90deg, rgba(255,255,255,0.06), rgba(0,0,0,0.02))}
+  .time{font-size:12px;color:var(--muted);margin-bottom:6px}
+
+  /* settings */
+  .settings{display:flex;flex-direction:column;gap:8px}
+  .row{display:flex;gap:8px;align-items:center}
+  label{font-size:13px;color:var(--muted)}
+  input[type=color]{width:38px;height:30px;border-radius:6px;border:none}
+  .small{font-size:13px;color:var(--muted)}
+
+  /* animations */
+  .pulse{animation:pulse 2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 rgba(0,0,0,0)}50%{box-shadow:0 0 24px rgba(0,0,0,0.12)}100%{box-shadow:0 0 0 rgba(0,0,0,0)}}
+
+  /* responsive */
+  @media (max-width:900px){main{flex-direction:column}.right{width:100%;max-width:none}}
+</style>
+</head>
+<body data-theme="dark">
+<header>
+  <div class="brand"><div class="logo">AV</div><div>
+    <div style="font-weight:700">Audio Visualizer</div>
+    <div style="font-size:13px;color:var(--muted)">Sync transcript • Speaker colors • Dark/Light</div>
+  </div></div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <button id="themeToggle" class="btn" title="Toggle theme">🌗</button>
+    <label class="btn" for="fileInput">Upload Audio</label>
+    <input id="fileInput" type="file" accept="audio/*">
+    <button id="downloadBtn" class="btn">Download JSON</button>
+  </div>
+</header>
+
+<main>
+  <div class="left">
+    <div class="controls">
+      <div class="player" style="flex:1">
+        <audio id="audio" controls preload="metadata"></audio>
+      </div>
+      <div class="settings" style="width:260px">
+        <div class="row"><label>Speaker 1 color</label><input id="s1color" type="color" value="#4A90E2"></div>
+        <div class="row"><label>Speaker 2 color</label><input id="s2color" type="color" value="#E24A68"></div>
+        <div class="row"><label class="small">Visualizer style</label>
+          <select id="vizStyle" class="btn" style="padding:6px;border-radius:8px;background:var(--panel)">
+            <option value="bars">Bars</option>
+            <option value="wave">Waveform</option>
+            <option value="combined">Combined</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="viz">
+      <div id="canvasWrap"><canvas id="canvas"></canvas></div>
+      <div class="legend"><div class="scale">FFT: <span id="fftVal">2048</span></div><div class="scale">Mode: <span id="modeLabel">Bars</span></div></div>
+    </div>
+
+    <div style="display:flex;gap:10px;align-items:center;margin-top:8px">
+      <button id="playAll" class="btn">Play</button>
+      <button id="pauseAll" class="btn">Pause</button>
+      <button id="jumpBack" class="btn">« 5s</button>
+      <button id="jumpFwd" class="btn">5s »</button>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-weight:700">Transcript</div>
+        <div style="font-size:13px;color:var(--muted)">Click a line to jump</div>
+      </div>
+      <div id="transcript"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ====== Transcript data (from your Word) ====== */
+const rawTranscript = `00:00:00 Speaker 1
+Welcome back to the Deep Dive. We're here to help make sense of the complex world of modern business strategy. Today, we're diving into information systems. These are really the blueprints, you know, the tech foundations that can make or break an organization.
+00:00:14 Speaker 2
+Absolutely. Our goal today is to really boil down the essentials for you. We're talking about that huge shift from, you know, owning all your hardware to the agility of the cloud, and also how enterprise systems like ERP and CRM tie everything together. Plus,
+00:00:29 Speaker 2
+the absolutely critical layer of cybersecurity protecting it all. It's about seeing how these pieces strategically fit.
+00:00:35 Speaker 1
+Okay, but before we jump into strategy, let's just quickly ground ourselves. What exactly is an information system? It's more than just computers.
+00:00:42 Speaker 2
+Oh, much more. Think of an IS as a, well, a coordinated set of components. It collects raw data, processes it, stores it, gets it where it needs to go, its main job. Turn chaos into clarity.
+00:00:53 Speaker 2
+Take raw facts and package them so leaders can make good decisions, coordinate actions, analyze what's happening.
+00:00:59 Speaker 1
+Right, and that brings up that common point of confusion, data versus information. Can you clarify that quickly?
+00:01:05 Speaker 2
+Sure, data is just raw facts, like numbers on a spreadsheet, 200, 300, 500, kind of meaningless on its own. Information is data that's been processed, given context. So when the system tells you, hey, sales jumped 20% last month, mostly because of product X,
+00:01:20 Speaker 2
+That's information. It's actionable. The system makes sense of the noise.
+00:01:23 Speaker 1
+Got it. Okay, so let's unpack this evolution. To really get today's systems, we need to look at how we got here. IT infrastructure wasn't built in a day.
+00:01:32 Speaker 2
+Definitely not. And looking back, it's less about just dates and more about this constant push to lower costs.
+00:01:38 Speaker 2
+and get more computing power to the actual users. We usually track about 6 main eras. It kicked off in the late 50s, the mainframe era. I think massive centralized machines like the IBM System 360, very expensive.
+00:01:50 Speaker 1
+Centralized, yeah. Then things started to spread out a bit with the mini-computer era, mid-60s onwards, more departmental computing.
+00:01:57 Speaker 2
+Exactly. A bit more accessible. IT started coming out of the, you know, locked basement room slowly. Then a huge leap.
+00:02:05 Speaker 2
+The personal computer era starting around 81. Productivity tools right on your desk. Game changer. But still, mostly standalone stuff. Real connections started with the client server era in the mid-80s. Networking, sharing resources like email servers.
+00:02:19 Speaker 1
+Okay, and then the internet changes everything again. Enterprise, internet computing era, early 90s. Web apps, e-commerce, early SaaS like Salesforce starting to bubble up.
+00:02:28 Speaker 2
+Precisely.
+00:02:29 Speaker 2
+which leads us right up to today, the cloud and mobile computing era. This move to on-demand scalable access, AWS, Azure, Google Cloud, it felt inevitable. And it wasn't just random tech advances. There were some fundamental economic forces pushing us this way.
+00:02:44 Speaker 1
+All right, let's talk about those drivers. You mentioned three key laws.
+00:02:47 Speaker 2
+Yeah, first, Moore's law. Computing power basically doubles every 18 months to two years. Constant pressure to upgrade or fall behind.
+00:02:54 Speaker 2
+Second, Metcalfe's law. The value of a network explodes as more people join. Think social media or even just shared company systems. More users, more value.
+00:03:02 Speaker 1
+And the third one was about storage costs plummeting, right?
+00:03:05 Speaker 2
+Exactly. The law of mass digital storage. Costs went from like astronomical figures per GB down to practically nothing. Pennies.
+00:03:15 Speaker 2
+That suddenly made storing vast amounts of data totally feasible, even strategic.
+00:03:20 Speaker 1
+Okay, so those laws really set the stage for this big strategic choice businesses face now. Stick with traditional on-premise gear or jump into the cloud.
+00:03:29 Speaker 2
+That's the heart of the infrastructure debate today. Traditional means high capital expenditure, CapEx. You buy the servers, the racks, the software licenses, you own it, you control it completely. Great for security control, essential for some industries with heavy regulations.
+00:03:43 Speaker 2
+But scaling is a pain. You have to guess demand way in advance and buy hardware.
+00:03:47 Speaker 1
+Whereas the cloud just flips that whole model.
+00:03:49 Speaker 2
+Completely. Cloud is operational expenditure, OPEX. You're essentially renting resources. Pay for what you use, scale up or down almost instantly. This is huge for agility. Startups can access enterprise-grade infrastructure right away. Remember that Nexus manufacturing case.
+00:04:05 Speaker 2
+Moving to cloud IaaS boosted their accessibility, sustainability, even cut machine downtime. The flexibility is a massive advantage.
+00:04:13 Speaker 1
+But cloud isn't just one thing, is it? We hear IaaS pass sauce all the time. What's the strategic difference? Why pick one over the other?
+00:04:21 Speaker 2
+good question. That distinction is key. BIaaS, infrastructure as a service, is like renting the basic building blocks.
+00:04:28 Speaker 2
+virtual servers, storage, networking. You manage everything from the operating system upwards.
+00:04:33 Speaker 1
+Okay, so more control, but more work. What about PaaS?
+00:04:36 Speaker 2
+PaaS, Platform as a Service, gives you the hardware and the operating system. Plus middleware, databases. Basically, an environment ready for you to build and deploy your own applications. The provider handles the underlying infrastructure.
+00:04:47 Speaker 1
+And SAS is the simplest.
+00:04:48 Speaker 2
+SAS, Software as a Service, yeah. That's just renting the finished application. Think Google Workspace, Microsoft 365, Salesforce. You manage almost nothing.
+00:04:58 Speaker 2
+just use the software. So moving from IaaS to pass to SaaS means giving up more control, but also shedding more management burden. It's a core strategic decision about where you want your IT team focused and how you manage costs.
+00:05:11 Speaker 1
+Okay, so we figured out where the data lives, often in this flexible cloud environment. Now, how do companies actually use that infrastructure to run the day-to-day business? This is where enterprise applications come in ERP and CRM.
+00:05:22 Speaker 2
+Exactly. ERP, Enterprise Resource Planning, aims to be the central nervous system. It integrates all the core functions, finance, HR, manufacturing, supply chain, usually built around a single massive shared database.
+00:05:33 Speaker 1
+Sounds powerful. Let's talk pros and cons. What are the big wins with ERP?
+00:05:38 Speaker 2
+The main goals are efficiency and visibility.
+00:05:41 Speaker 2
+operational efficiency by automating processes like invoicing or payroll. Collaboration improves because everyone's looking at the same data. And that unified data means better, faster decisions. Like if sales data instantly updates inventory and production schedules, you can fill orders quickly without guessing.
+00:05:57 Speaker 1
+But putting all your eggs in one giant complex basket sounds risky too. What are the downsides, the challenges?
+00:06:04 Speaker 2
+Oh, they're significant. First, cost.
+00:06:07 Speaker 2
+ERP implementations are notoriously expensive and time-consuming. Second, complexity. These systems are huge, and customizing them to fit your specific business processes can be really difficult, sometimes impossible, without breaking things. And crucially, that centralization creates a massive security target. All your vital operational and financial data in one place. That's, well, that's very attractive to attackers.
+00:06:29 Speaker 1
+Yeah, that security point keeps coming up. We'll definitely circle back to that. Okay, shifting from internal
+00:06:35 Speaker 1
+operations to how companies face the outside world. Let's talk CRM, customer relationship management.
+00:06:40 Speaker 2
+Right, CRM is all about managing interactions with your customers to build loyalty and ultimately drive more profitable relationships.
+00:06:48 Speaker 2
+It's about achieving what they call customer intimacy.
+00:06:51 Speaker 1
+So how does it help strategically? What functions does it cover?
+00:06:54 Speaker 2
+It usually bundles tools for a few key areas. Salesforce automation helps track leads, manage opportunities, forecast sales. Customer service tools manage support cases, maybe offer self-service portals. And marketing tools help with segmenting customers, running campaigns, tracking results. The strategic goal is to integrate all that customer data, sales calls, support tickets, marketing clicks to get a single 360-degree view.
+00:07:18 Speaker 2
+that lets you personalize interactions, maybe even predict what a customer might need next, which really boosts loyalty.
+00:07:24 Speaker 1
+Okay, so we have these big integrated systems, ERP and CRM, constantly churning out data, mountains of it, but data itself isn't useful without intelligence.
+00:07:34 Speaker 2
+Precisely. That's where business intelligence, BI, comes in. BI tools and techniques are what transform that raw data into actual strategic insights.
+00:07:43 Speaker 2
+Think dashboards, reports, predictive models.
+00:07:46 Speaker 1
+So what's the foundation for BI? We hear about big data all the time.
+00:07:49 Speaker 2
+Big data is kind of the raw material, often defined by the five V's. Volume, just sheer amount. Velocity, speed it comes in. Variety, structured, unstructured. Images, text, veracity, how trustworthy is it? And ultimately, value, can we actually get something useful from it?
+00:08:07 Speaker 2
+Companies typically store this data in a couple of ways. Data warehouses are for structured, historical data, good for standard reports. Data lakes are more like vast reservoirs for all data, raw and messy, perfect for data scientists to explore with machine learning.
+00:08:20 Speaker 1
+Can you give an example like the Walmart case you mentioned earlier? How does that combine ERP operational data with BI for strategic advantage?
+00:08:27 Speaker 2
+Walmart is a classic. They use their massive data warehouse fed by operational systems, not just to see what's sold yesterday, but to do incredibly sophisticated analysis.
+00:08:37 Speaker 2
+They can forecast demand for specific items in specific stores, optimize inventory in real time, manage their supply chain incredibly efficiently. Think about the savings and logistics, preventing stockouts on popular items, reducing waste on perishables. All driven by analyzing that integrated data. That's BI turning operational data into a powerful competitive weapon.
+00:08:58 Speaker 1
+That really highlights the power of integration and analytics. But as you said, the more connected and valuable these systems are, especially in the cloud, the bigger the target. Security isn't just an IT checklist item anymore, is it?
+00:09:10 Speaker 2
+Absolutely not. It's a fundamental business risk. Our dependence on these systems is almost total now. A serious breach can literally halt operations overnight. Think financial losses, regulatory fines, but also the huge reputational damage. It can be existential. And the vulnerabilities are everywhere.
+00:09:28 Speaker 2
+System complexity itself is a risk, all those interconnected parts. IoT devices popping up, plus the human element, weak passwords, falling for phishing scams. And wireless networks add their own challenges.
+00:09:39 Speaker 1
+Okay, let's get specific. What kind of cyber threats should organizations be most worried about today? What's the malware landscape look like?
+00:09:47 Speaker 2
+Well, malware is a broad category. You have viruses, which need a user to click something to spread. Then worms, which are scarier because they can self-replicate across networks without any help. SQL
+00:09:58 Speaker 2
+Glamour was a famous example. Trojans look legitimate, but hide malicious code, maybe creating a backdoor. And then there's ransomware, which has become a huge problem.
+00:10:06 Speaker 1
+Like WannaCry, right? Exploiting known vulnerabilities in systems people hadn't patched.
+00:10:10 Speaker 2
+Exactly. WannaCry hits systems that were vulnerable because they were outdated. It encrypts your data and demands payment, often Bitcoin, to get it back. It can be devastating. Beyond malware, you have things like spoofing, where attackers fake their identity in emails or websites. And DDoS, distributed
+00:10:28 Speaker 2
+denial of service attacks, which flood a system with traffic to overwhelm it and knock it offline.
+00:10:33 Speaker 1
+You also mentioned zero-day vulnerabilities earlier. Log4Shell in 2021 sounded terrifying. What makes those so bad?
+00:10:40 Speaker 2
+Zero days are flaws in software that even the vendor doesn't know about yet. So when attackers find one, there's no patch, no ready defense. Log4Shell was critical because the vulnerable code, Log4J, was used in thousands of applications worldwide.
+00:10:55 Speaker 2
+Attackers essentially had a master key to countless systems before defenders even knew the lock was broken. It was a scramble.
+00:11:01 Speaker 1
+Given this constant barrage of threats, what are the non-negotiable cybersecurity practices, the essential IT solutions businesses need?
+00:11:07 Speaker 2
+It has to be layered defense. First, identity management is crucial. Multi-factor authentication, MFA, should be standard everywhere, using something you know, password, something you have, phone token, maybe something you are, biometrics. Second, network protection.
+00:11:22 Speaker 2
+Firewalls are the gatekeepers, inspecting traffic in and out. Intrusion detection systems, IDS, watch inside the network for suspicious activity that might have slipped past the firewall.
+00:11:32 Speaker 1
+And what about the day-to-day operational stuff, patching and people?
+00:11:36 Speaker 2
+Absolutely vital. Software maintenance patching systems quickly closes those known vulnerabilities before attackers exploit them. It's a race. Animalware software needs to be up to date. But technology alone isn't enough. The human factor is often the weakest link.
+00:11:52 Speaker 2
+So continuous security awareness training for employees is critical. Teaching them to spot phishing emails, avoid suspicious links, use strong passwords. That's a huge part of the defense. One wrong click can bypass millions in tech security.
+00:12:04 Speaker 1
+Right. So we've traced this whole arc.
+00:12:07 Speaker 1
+The evolution of IT infrastructure leading to the dominance of the cloud, how ERP and CRM integrate the core business, leveraging BI for insights, and then the constant need to secure it all with robust cybersecurity.
+00:12:20 Speaker 2
+It's that holistic view, understanding how all these pieces connect, that's so important for anyone involved in managing or strategizing around technology today. But
+00:12:28 Speaker 2
+if we take a step back and think about the bigger picture, especially as these systems get smarter, more autonomous think AI making loan decisions or self-driving cars navigating traffic, it raises a really profound question around accountability and control. Chapter 3 touches on ethics, and this is central.
+00:12:45 Speaker 2
+When an autonomous system makes a mistake or causes harm, who is responsible? The programmer, the owner, the AI itself. That's something you really need to grapple with as these technologies become more embedded in our lives. How do we ensure accountability when the decision maker isn't human?
+00:13:00 Speaker 1
+A really critical question to think about. Definitely food for thought. Thank you for joining us on this deep dive. We'll see you next time.`;
+
+// simple parser WITHOUT regex backslashes to avoid replacement issues
+function parseRawSimple(raw){
+const lines = raw.split('\n');
+const items = [];
+  let i = 0;
+  while(i < lines.length){
+    const line = lines[i].trim();
+    if(line.startsWith('00:')){
+      // timestamp line, e.g. "00:00:14 Speaker 2"
+      const parts = line.split(' ');
+      const ts = parts[0];
+      // find 'Speaker' token index
+      let sp = 1;
+      for(let k=1;k<parts.length;k++){
+        if(parts[k].toLowerCase() === 'speaker'){
+          if(k+1 < parts.length) sp = Number(parts[k+1]);
+          break;
+        }
+      }
+      // next lines until next timestamp are the text
+      let textParts = [];
+      let j = i+1;
+      while(j < lines.length && !lines[j].trim().startsWith('00:')){
+        if(lines[j].trim() !== '') textParts.push(lines[j].trim());
+        j++;
+      }
+      const text = textParts.join(' ');
+      const start = toSecondsSimple(ts);
+      items.push({start, speaker:sp, text});
+      i = j;
+    } else {
+      i++;
+    }
+  }
+  return items;
+}
+function toSecondsSimple(ts){const p = ts.split(':').map(function(x){return parseInt(x,10)});return p[0]*3600 + p[1]*60 + p[2];}
+
+transcript = parseRawSimple(rawTranscript);
+
+// render transcript
+const transcriptDiv = document.getElementById('transcript');
+function renderTranscript(){
+  transcriptDiv.innerHTML='';
+  transcript.forEach((t,i)=>{
+    const div = document.createElement('div');
+    div.className = `transcript-line speaker-${t.speaker}`;
+    div.id = 't-'+i;
+    div.innerHTML = '<div class="time">' + formatTime(t.start) + '</div><div><strong>Speaker ' + t.speaker + ':</strong> ' + escapeHtml(t.text) + '</div>';
+    div.addEventListener('click', function(){audio.currentTime = t.start; audio.play();});
+    transcriptDiv.appendChild(div);
+  });
+}
+
+function formatTime(s){
+  const hh = Math.floor(s/3600); const mm = Math.floor((s%3600)/60); const ss = Math.floor(s%60);
+  return String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0')+':'+String(ss).padStart(2,'0');
+}
+function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+renderTranscript();
+
+/* ====== Audio + Visualizer ====== */
+const fileInput = document.getElementById('fileInput');
+const audio = document.getElementById('audio');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let audioCtx, analyser, sourceNode, dataArray, bufferLength;
+let animationId; const devicePixelRatio = window.devicePixelRatio || 1;
+
+function setupAudioFromFile(file){
+  if(!file) return;
+  if(audioCtx) audioCtx.close();
+  audio.src = URL.createObjectURL(file);
+  audio.load();
+  audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  sourceNode = audioCtx.createMediaElementSource(audio);
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 2048; bufferLength = analyser.frequencyBinCount; dataArray = new Uint8Array(bufferLength);
+  sourceNode.connect(analyser); analyser.connect(audioCtx.destination);
+  resizeCanvas(); draw();
+}
+
+fileInput.addEventListener('change', function(e){
+  const f = e.target.files[0]; if(f) setupAudioFromFile(f);
+});
+
+window.addEventListener('resize', resizeCanvas);
+function resizeCanvas(){canvas.width = canvas.clientWidth * devicePixelRatio; canvas.height = canvas.clientHeight * devicePixelRatio; ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0)}
+
+function draw(){
+  animationId = requestAnimationFrame(draw);
+  if(!analyser) return;
+  analyser.getByteFrequencyData(dataArray);
+
+  // clear
+  ctx.clearRect(0,0,canvas.width/devicePixelRatio,canvas.height/devicePixelRatio);
+  const w = canvas.clientWidth; const h = canvas.clientHeight;
+
+  // background gradient
+  const grad = ctx.createLinearGradient(0,0,w,0);
+  grad.addColorStop(0,'rgba(0,0,0,0)'); grad.addColorStop(1,'rgba(0,0,0,0.15)');
+  ctx.fillStyle = grad; ctx.fillRect(0,0,w,h);
+
+  // bars
+  const vizStyle = document.getElementById('vizStyle').value;
+  const barCount = Math.min(128, bufferLength);
+  const barWidth = (w / barCount) * 0.8;
+  let x=0;
+  for(let i=0;i<barCount;i++){
+    const v = dataArray[i]/255; const barH = v * h * 0.9;
+    const r = Math.floor(120 + v*135); const g = Math.floor(50 + v*120); const b = 255 - Math.floor(v*80);
+    if(vizStyle==='bars' || vizStyle==='combined'){
+      ctx.fillStyle = 'rgb('+r+','+g+','+b+')';
+      ctx.fillRect(x, h - barH, barWidth, barH);
+    }
+    x += barWidth + 1;
+  }
+
+  // waveform
+  if(vizStyle==='wave' || vizStyle==='combined'){
+    const timeData = new Uint8Array(analyser.fftSize);
+    analyser.getByteTimeDomainData(timeData);
+    ctx.lineWidth = 2; ctx.beginPath();
+    const slice = w / timeData.length; let xx = 0;
+    for(let i=0;i<timeData.length;i+=Math.max(1,Math.floor(timeData.length/800))){
+      const v = timeData[i]/128.0; const y = (v*0.5) * h;
+      if(i===0) ctx.moveTo(xx,y); else ctx.lineTo(xx,y);
+      xx += slice;
+    }
+    ctx.strokeStyle = 'rgba(0,229,168,0.9)'; ctx.stroke();
+  }
+
+  // glow when playing
+  if(!audio.paused){ ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle='rgba(0,229,168,0.02)'; ctx.fillRect(0,0,w,h); ctx.globalCompositeOperation='source-over'; }
+}
+
+/* ====== Syncing transcript with audio ====== */
+let lastActive = -1;
+function updateActiveLine(){
+  const t = audio.currentTime;
+  for(let i=0;i<transcript.length;i++){
+    const curr = transcript[i]; const next = transcript[i+1] ? transcript[i+1].start : Infinity;
+    const el = document.getElementById('t-'+i);
+    if(t>=curr.start && t<next){
+      if(lastActive!==i){
+        if(lastActive>=0){document.getElementById('t-'+lastActive).classList.remove('current');}
+        el.classList.add('current'); el.scrollIntoView({behavior:'smooth',block:'center'});
+        lastActive = i;
+      }
+      break;
+    }
+  }
+}
+
+audio.addEventListener('timeupdate', updateActiveLine);
+
+/* ====== Controls ====== */
+document.getElementById('playAll').addEventListener('click', function(){audio.play();});
+document.getElementById('pauseAll').addEventListener('click', function(){audio.pause();});
+document.getElementById('jumpBack').addEventListener('click', function(){audio.currentTime = Math.max(0,audio.currentTime - 5);});
+document.getElementById('jumpFwd').addEventListener('click', function(){audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 5);});
+
+/* ====== speaker color controls ====== */
+const s1c = document.getElementById('s1color'); const s2c = document.getElementById('s2color');
+s1c.addEventListener('input', function(e){document.documentElement.style.setProperty('--s1', e.target.value); document.querySelectorAll('.speaker-1').forEach(function(el){el.style.borderLeftColor = e.target.value})});
+s2c.addEventListener('input', function(e){document.documentElement.style.setProperty('--s2', e.target.value); document.querySelectorAll('.speaker-2').forEach(function(el){el.style.borderLeftColor = e.target.value})});
+
+// set initial colors
+s1c.dispatchEvent(new Event('input')); s2c.dispatchEvent(new Event('input'));
+
+document.getElementById('vizStyle').addEventListener('change', function(){document.getElementById('modeLabel').textContent = document.getElementById('vizStyle').value;});
+
+/* ====== theme toggle ====== */
+const themeToggle = document.getElementById('themeToggle'); themeToggle.addEventListener('click', function(){
+  const el = document.body; if(el.getAttribute('data-theme') === 'dark'){el.setAttribute('data-theme','light'); themeToggle.textContent='🌒'} else {el.setAttribute('data-theme','dark'); themeToggle.textContent='🌗'}
+});
+
+/* ====== Download transcript JSON ====== */
+document.getElementById('downloadBtn').addEventListener('click', function(){
+  const out = transcript.map(function(t,i){return {start:t.start, end: transcript[i+1]?transcript[i+1].start : (t.start+5), speaker:t.speaker, text:t.text}});
+  const blob = new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'transcript.json'; a.click();
+});
+
+/* ====== utilities ====== */
+function init(){ resizeCanvas(); renderTranscript(); }
+init();
+</script>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Audio Visualizer + Synced Transcript</title>
+<style>
+  :root{
+    --bg:#0f1724; --panel:#0b1220; --text:#e6eef8; --muted:#9fb0c8;
+    --s1:#4A90E2; --s2:#E24A68; --accent:#00E5A8;
+  }
+  [data-theme="light"]{ --bg:#f6f9fc; --panel:#ffffff; --text:#071422; --muted:#4b6b82; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;height:100vh;display:flex;flex-direction:column}
+  header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.03)}
+  .brand{display:flex;gap:12px;align-items:center}
+  .logo{width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,var(--s1),var(--accent));display:flex;align-items:center;justify-content:center;font-weight:700}
+  main{flex:1;display:flex;flex-direction:column;gap:18px;padding:18px;overflow-y:auto}
+  .top-section{display:flex;flex-direction:column;gap:12px}
+  .controls{display:flex;gap:10px;align-items:center}
+  input[type=file]{display:none}
+  .btn{background:var(--panel);color:var(--text);border:1px solid rgba(255,255,255,0.03);padding:8px 12px;border-radius:8px;cursor:pointer}
+  .btn:active{transform:translateY(1px)}
+  .player{display:flex;align-items:center;gap:12px}
+  audio{width:100%}
+
+  /* visualizer card */
+  .viz{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);border-radius:12px;padding:12px;border:1px solid rgba(255,255,255,0.03);display:flex;flex-direction:column;gap:8px}
+  #canvasWrap{position:relative;border-radius:8px;overflow:hidden;background:#000;height:260px}
+  canvas{width:100%;height:100%;display:block}
+  .legend{display:flex;justify-content:space-between;align-items:center;padding:8px 4px}
+  .legend .scale{font-size:12px;color:var(--muted)}
+
+  /* transcript */
+  .transcript-section{width:100%;display:flex;flex-direction:column;gap:12px}
+  .panel{background:var(--panel);padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);max-height:400px;overflow:auto}
+  .transcript-line{padding:10px;border-radius:8px;margin-bottom:8px;transition:all .2s ease;border-left:4px solid transparent}
+  .speaker-1{color:var(--s1);border-left-color:var(--s1);background:linear-gradient(90deg, rgba(74,144,226,0.06), transparent)}
+  .speaker-2{color:var(--s2);border-left-color:var(--s2);background:linear-gradient(90deg, rgba(226,74,104,0.05), transparent)}
+  .current{transform:scale(1.02);box-shadow:0 6px 18px rgba(2,6,23,0.6);background:linear-gradient(90deg, rgba(255,255,255,0.06), rgba(0,0,0,0.02))}
+  .time{font-size:12px;color:var(--muted);margin-bottom:6px}
+
+  /* settings */
+  .settings{display:flex;flex-direction:column;gap:8px}
+  .row{display:flex;gap:8px;align-items:center}
+  label{font-size:13px;color:var(--muted)}
+  input[type=color]{width:38px;height:30px;border-radius:6px;border:none}
+  .small{font-size:13px;color:var(--muted)}
+
+  /* animations */
+  .pulse{animation:pulse 2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 rgba(0,0,0,0)}50%{box-shadow:0 0 24px rgba(0,0,0,0.12)}100%{box-shadow:0 0 0 rgba(0,0,0,0)}}
+
+  /* responsive */
+  @media (max-width:900px){
+    .controls{flex-direction:column}
+    .player{width:100%}
+    .settings{width:100%}
+  }
+</style>
+</head>
+<body data-theme="dark">
+<header>
+  <div class="brand"><div class="logo">AV</div><div>
+    <div style="font-weight:700">Audio Visualizer</div>
+    <div style="font-size:13px;color:var(--muted)">Sync transcript • Speaker colors • Dark/Light</div>
+  </div></div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <button id="themeToggle" class="btn" title="Toggle theme">🌗</button>
+    <label class="btn" for="fileInput">Upload Audio</label>
+    <input id="fileInput" type="file" accept="audio/*">
+    <button id="downloadBtn" class="btn">Download JSON</button>
+  </div>
+</header>
+
+<main>
+  <div class="top-section">
+    <div class="controls">
+      <div class="player" style="flex:1">
+        <audio id="audio" controls preload="metadata"></audio>
+      </div>
+      <div class="settings" style="width:260px">
+        <div class="row"><label>Speaker 1 color</label><input id="s1color" type="color" value="#4A90E2"></div>
+        <div class="row"><label>Speaker 2 color</label><input id="s2color" type="color" value="#E24A68"></div>
+        <div class="row"><label class="small">Visualizer style</label>
+          <select id="vizStyle" class="btn" style="padding:6px;border-radius:8px;background:var(--panel)">
+            <option value="bars">Bars</option>
+            <option value="wave">Waveform</option>
+            <option value="combined">Combined</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="viz">
+      <div id="canvasWrap"><canvas id="canvas"></canvas></div>
+      <div class="legend"><div class="scale">FFT: <span id="fftVal">2048</span></div><div class="scale">Mode: <span id="modeLabel">Bars</span></div></div>
+    </div>
+
+    <div style="display:flex;gap:10px;align-items:center;margin-top:8px">
+      <button id="playAll" class="btn">Play</button>
+      <button id="pauseAll" class="btn">Pause</button>
+      <button id="jumpBack" class="btn">« 5s</button>
+      <button id="jumpFwd" class="btn">5s »</button>
+    </div>
+  </div>
+
+  <div class="transcript-section">
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-weight:700">Transcript</div>
+        <div style="font-size:13px;color:var(--muted)">Click a line to jump</div>
+      </div>
+      <div id="transcript"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ====== Transcript data (from your Word) ====== */
+const rawTranscript = `00:00:00 Speaker 1
+Welcome back to the Deep Dive. We're here to help make sense of the complex world of modern business strategy. Today, we're diving into information systems. These are really the blueprints, you know, the tech foundations that can make or break an organization.
+00:00:14 Speaker 2
+Absolutely. Our goal today is to really boil down the essentials for you. We're talking about that huge shift from, you know, owning all your hardware to the agility of the cloud, and also how enterprise systems like ERP and CRM tie everything together. Plus,
+00:00:29 Speaker 2
+the absolutely critical layer of cybersecurity protecting it all. It's about seeing how these pieces strategically fit.
+00:00:35 Speaker 1
+Okay, but before we jump into strategy, let's just quickly ground ourselves. What exactly is an information system? It's more than just computers.
+00:00:42 Speaker 2
+Oh, much more. Think of an IS as a, well, a coordinated set of components. It collects raw data, processes it, stores it, gets it where it needs to go, its main job. Turn chaos into clarity.
+00:00:53 Speaker 2
+Take raw facts and package them so leaders can make good decisions, coordinate actions, analyze what's happening.
+00:00:59 Speaker 1
+Right, and that brings up that common point of confusion, data versus information. Can you clarify that quickly?
+00:01:05 Speaker 2
+Sure, data is just raw facts, like numbers on a spreadsheet, 200, 300, 500, kind of meaningless on its own. Information is data that's been processed, given context. So when the system tells you, hey, sales jumped 20% last month, mostly because of product X,
+00:01:20 Speaker 2
+That's information. It's actionable. The system makes sense of the noise.
+00:01:23 Speaker 1
+Got it. Okay, so let's unpack this evolution. To really get today's systems, we need to look at how we got here. IT infrastructure wasn't built in a day.
+00:01:32 Speaker 2
+Definitely not. And looking back, it's less about just dates and more about this constant push to lower costs.
+00:01:38 Speaker 2
+and get more computing power to the actual users. We usually track about 6 main eras. It kicked off in the late 50s, the mainframe era. I think massive centralized machines like the IBM System 360, very expensive.
+00:01:50 Speaker 1
+Centralized, yeah. Then things started to spread out a bit with the mini-computer era, mid-60s onwards, more departmental computing.
+00:01:57 Speaker 2
+Exactly. A bit more accessible. IT started coming out of the, you know, locked basement room slowly. Then a huge leap.
+00:02:05 Speaker 2
+The personal computer era starting around 81. Productivity tools right on your desk. Game changer. But still, mostly standalone stuff. Real connections started with the client server era in the mid-80s. Networking, sharing resources like email servers.
+00:02:19 Speaker 1
+Okay, and then the internet changes everything again. Enterprise, internet computing era, early 90s. Web apps, e-commerce, early SaaS like Salesforce starting to bubble up.
+00:02:28 Speaker 2
+Precisely.
+00:02:29 Speaker 2
+which leads us right up to today, the cloud and mobile computing era. This move to on-demand scalable access, AWS, Azure, Google Cloud, it felt inevitable. And it wasn't just random tech advances. There were some fundamental economic forces pushing us this way.
+00:02:44 Speaker 1
+All right, let's talk about those drivers. You mentioned three key laws.
+00:02:47 Speaker 2
+Yeah, first, Moore's law. Computing power basically doubles every 18 months to two years. Constant pressure to upgrade or fall behind.
+00:02:54 Speaker 2
+Second, Metcalfe's law. The value of a network explodes as more people join. Think social media or even just shared company systems. More users, more value.
+00:03:02 Speaker 1
+And the third one was about storage costs plummeting, right?
+00:03:05 Speaker 2
+Exactly. The law of mass digital storage. Costs went from like astronomical figures per GB down to practically nothing. Pennies.
+00:03:15 Speaker 2
+That suddenly made storing vast amounts of data totally feasible, even strategic.
+00:03:20 Speaker 1
+Okay, so those laws really set the stage for this big strategic choice businesses face now. Stick with traditional on-premise gear or jump into the cloud.
+00:03:29 Speaker 2
+That's the heart of the infrastructure debate today. Traditional means high capital expenditure, CapEx. You buy the servers, the racks, the software licenses, you own it, you control it completely. Great for security control, essential for some industries with heavy regulations.
+00:03:43 Speaker 2
+But scaling is a pain. You have to guess demand way in advance and buy hardware.
+00:03:47 Speaker 1
+Whereas the cloud just flips that whole model.
+00:03:49 Speaker 2
+Completely. Cloud is operational expenditure, OPEX. You're essentially renting resources. Pay for what you use, scale up or down almost instantly. This is huge for agility. Startups can access enterprise-grade infrastructure right away. Remember that Nexus manufacturing case.
+00:04:05 Speaker 2
+Moving to cloud IaaS boosted their accessibility, sustainability, even cut machine downtime. The flexibility is a massive advantage.
+00:04:13 Speaker 1
+But cloud isn't just one thing, is it? We hear IaaS pass sauce all the time. What's the strategic difference? Why pick one over the other?
+00:04:21 Speaker 2
+good question. That distinction is key. BIaaS, infrastructure as a service, is like renting the basic building blocks.
+00:04:28 Speaker 2
+virtual servers, storage, networking. You manage everything from the operating system upwards.
+00:04:33 Speaker 1
+Okay, so more control, but more work. What about PaaS?
+00:04:36 Speaker 2
+PaaS, Platform as a Service, gives you the hardware and the operating system. Plus middleware, databases. Basically, an environment ready for you to build and deploy your own applications. The provider handles the underlying infrastructure.
+00:04:47 Speaker 1
+And SAS is the simplest.
+00:04:48 Speaker 2
+SAS, Software as a Service, yeah. That's just renting the finished application. Think Google Workspace, Microsoft 365, Salesforce. You manage almost nothing.
+00:04:58 Speaker 2
+just use the software. So moving from IaaS to pass to SaaS means giving up more control, but also shedding more management burden. It's a core strategic decision about where you want your IT team focused and how you manage costs.
+00:05:11 Speaker 1
+Okay, so we figured out where the data lives, often in this flexible cloud environment. Now, how do companies actually use that infrastructure to run the day-to-day business? This is where enterprise applications come in ERP and CRM.
+00:05:22 Speaker 2
+Exactly. ERP, Enterprise Resource Planning, aims to be the central nervous system. It integrates all the core functions, finance, HR, manufacturing, supply chain, usually built around a single massive shared database.
+00:05:33 Speaker 1
+Sounds powerful. Let's talk pros and cons. What are the big wins with ERP?
+00:05:38 Speaker 2
+The main goals are efficiency and visibility.
+00:05:41 Speaker 2
+operational efficiency by automating processes like invoicing or payroll. Collaboration improves because everyone's looking at the same data. And that unified data means better, faster decisions. Like if sales data instantly updates inventory and production schedules, you can fill orders quickly without guessing.
+00:05:57 Speaker 1
+But putting all your eggs in one giant complex basket sounds risky too. What are the downsides, the challenges?
+00:06:04 Speaker 2
+Oh, they're significant. First, cost.
+00:06:07 Speaker 2
+ERP implementations are notoriously expensive and time-consuming. Second, complexity. These systems are huge, and customizing them to fit your specific business processes can be really difficult, sometimes impossible, without breaking things. And crucially, that centralization creates a massive security target. All your vital operational and financial data in one place. That's, well, that's very attractive to attackers.
+00:06:29 Speaker 1
+Yeah, that security point keeps coming up. We'll definitely circle back to that. Okay, shifting from internal
+00:06:35 Speaker 1
+operations to how companies face the outside world. Let's talk CRM, customer relationship management.
+00:06:40 Speaker 2
+Right, CRM is all about managing interactions with your customers to build loyalty and ultimately drive more profitable relationships.
+00:06:48 Speaker 2
+It's about achieving what they call customer intimacy.
+00:06:51 Speaker 1
+So how does it help strategically? What functions does it cover?
+00:06:54 Speaker 2
+It usually bundles tools for a few key areas. Salesforce automation helps track leads, manage opportunities, forecast sales. Customer service tools manage support cases, maybe offer self-service portals. And marketing tools help with segmenting customers, running campaigns, tracking results. The strategic goal is to integrate all that customer data, sales calls, support tickets, marketing clicks to get a single 360-degree view.
+00:07:18 Speaker 2
+that lets you personalize interactions, maybe even predict what a customer might need next, which really boosts loyalty.
+00:07:24 Speaker 1
+Okay, so we have these big integrated systems, ERP and CRM, constantly churning out data, mountains of it, but data itself isn't useful without intelligence.
+00:07:34 Speaker 2
+Precisely. That's where business intelligence, BI, comes in. BI tools and techniques are what transform that raw data into actual strategic insights.
+00:07:43 Speaker 2
+Think dashboards, reports, predictive models.
+00:07:46 Speaker 1
+So what's the foundation for BI? We hear about big data all the time.
+00:07:49 Speaker 2
+Big data is kind of the raw material, often defined by the five V's. Volume, just sheer amount. Velocity, speed it comes in. Variety, structured, unstructured. Images, text, veracity, how trustworthy is it? And ultimately, value, can we actually get something useful from it?
+00:08:07 Speaker 2
+Companies typically store this data in a couple of ways. Data warehouses are for structured, historical data, good for standard reports. Data lakes are more like vast reservoirs for all data, raw and messy, perfect for data scientists to explore with machine learning.
+00:08:20 Speaker 1
+Can you give an example like the Walmart case you mentioned earlier? How does that combine ERP operational data with BI for strategic advantage?
+00:08:27 Speaker 2
+Walmart is a classic. They use their massive data warehouse fed by operational systems, not just to see what's sold yesterday, but to do incredibly sophisticated analysis.
+00:08:37 Speaker 2
+They can forecast demand for specific items in specific stores, optimize inventory in real time, manage their supply chain incredibly efficiently. Think about the savings and logistics, preventing stockouts on popular items, reducing waste on perishables. All driven by analyzing that integrated data. That's BI turning operational data into a powerful competitive weapon.
+00:08:58 Speaker 1
+That really highlights the power of integration and analytics. But as you said, the more connected and valuable these systems are, especially in the cloud, the bigger the target. Security isn't just an IT checklist item anymore, is it?
+00:09:10 Speaker 2
+Absolutely not. It's a fundamental business risk. Our dependence on these systems is almost total now. A serious breach can literally halt operations overnight. Think financial losses, regulatory fines, but also the huge reputational damage. It can be existential. And the vulnerabilities are everywhere.
+00:09:28 Speaker 2
+System complexity itself is a risk, all those interconnected parts. IoT devices popping up, plus the human element, weak passwords, falling for phishing scams. And wireless networks add their own challenges.
+00:09:39 Speaker 1
+Okay, let's get specific. What kind of cyber threats should organizations be most worried about today? What's the malware landscape look like?
+00:09:47 Speaker 2
+Well, malware is a broad category. You have viruses, which need a user to click something to spread. Then worms, which are scarier because they can self-replicate across networks without any help. SQL
+00:09:58 Speaker 2
+Glamour was a famous example. Trojans look legitimate, but hide malicious code, maybe creating a backdoor. And then there's ransomware, which has become a huge problem.
+00:10:06 Speaker 1
+Like WannaCry, right? Exploiting known vulnerabilities in systems people hadn't patched.
+00:10:10 Speaker 2
+Exactly. WannaCry hits systems that were vulnerable because they were outdated. It encrypts your data and demands payment, often Bitcoin, to get it back. It can be devastating. Beyond malware, you have things like spoofing, where attackers fake their identity in emails or websites. And DDoS, distributed
+00:10:28 Speaker 2
+denial of service attacks, which flood a system with traffic to overwhelm it and knock it offline.
+00:10:33 Speaker 1
+You also mentioned zero-day vulnerabilities earlier. Log4Shell in 2021 sounded terrifying. What makes those so bad?
+00:10:40 Speaker 2
+Zero days are flaws in software that even the vendor doesn't know about yet. So when attackers find one, there's no patch, no ready defense. Log4Shell was critical because the vulnerable code, Log4J, was used in thousands of applications worldwide.
+00:10:55 Speaker 2
+Attackers essentially had a master key to countless systems before defenders even knew the lock was broken. It was a scramble.
+00:11:01 Speaker 1
+Given this constant barrage of threats, what are the non-negotiable cybersecurity practices, the essential IT solutions businesses need?
+00:11:07 Speaker 2
+It has to be layered defense. First, identity management is crucial. Multi-factor authentication, MFA, should be standard everywhere, using something you know, password, something you have, phone token, maybe something you are, biometrics. Second, network protection.
+00:11:22 Speaker 2
+Firewalls are the gatekeepers, inspecting traffic in and out. Intrusion detection systems, IDS, watch inside the network for suspicious activity that might have slipped past the firewall.
+00:11:32 Speaker 1
+And what about the day-to-day operational stuff, patching and people?
+00:11:36 Speaker 2
+Absolutely vital. Software maintenance patching systems quickly closes those known vulnerabilities before attackers exploit them. It's a race. Animalware software needs to be up to date. But technology alone isn't enough. The human factor is often the weakest link.
+00:11:52 Speaker 2
+So continuous security awareness training for employees is critical. Teaching them to spot phishing emails, avoid suspicious links, use strong passwords. That's a huge part of the defense. One wrong click can bypass millions in tech security.
+00:12:04 Speaker 1
+Right. So we've traced this whole arc.
+00:12:07 Speaker 1
+The evolution of IT infrastructure leading to the dominance of the cloud, how ERP and CRM integrate the core business, leveraging BI for insights, and then the constant need to secure it all with robust cybersecurity.
+00:12:20 Speaker 2
+It's that holistic view, understanding how all these pieces connect, that's so important for anyone involved in managing or strategizing around technology today. But
+00:12:28 Speaker 2
+if we take a step back and think about the bigger picture, especially as these systems get smarter, more autonomous think AI making loan decisions or self-driving cars navigating traffic, it raises a really profound question around accountability and control. Chapter 3 touches on ethics, and this is central.
+00:12:45 Speaker 2
+When an autonomous system makes a mistake or causes harm, who is responsible? The programmer, the owner, the AI itself. That's something you really need to grapple with as these technologies become more embedded in our lives. How do we ensure accountability when the decision maker isn't human?
+00:13:00 Speaker 1
+A really critical question to think about. Definitely food for thought. Thank you for joining us on this deep dive. We'll see you next time.`;
+
+// simple parser WITHOUT regex backslashes to avoid replacement issues
+function parseRawSimple(raw){
+const lines = raw.split('\n');
+const items = [];
+  let i = 0;
+  while(i < lines.length){
+    const line = lines[i].trim();
+    if(line.startsWith('00:')){
+      // timestamp line, e.g. "00:00:14 Speaker 2"
+      const parts = line.split(' ');
+      const ts = parts[0];
+      // find 'Speaker' token index
+      let sp = 1;
+      for(let k=1;k<parts.length;k++){
+        if(parts[k].toLowerCase() === 'speaker'){
+          if(k+1 < parts.length) sp = Number(parts[k+1]);
+          break;
+        }
+      }
+      // next lines until next timestamp are the text
+      let textParts = [];
+      let j = i+1;
+      while(j < lines.length && !lines[j].trim().startsWith('00:')){
+        if(lines[j].trim() !== '') textParts.push(lines[j].trim());
+        j++;
+      }
+      const text = textParts.join(' ');
+      const start = toSecondsSimple(ts);
+      items.push({start, speaker:sp, text});
+      i = j;
+    } else {
+      i++;
+    }
+  }
+  return items;
+}
+function toSecondsSimple(ts){const p = ts.split(':').map(function(x){return parseInt(x,10)});return p[0]*3600 + p[1]*60 + p[2];}
+
+transcript = parseRawSimple(rawTranscript);
+
+// render transcript
+const transcriptDiv = document.getElementById('transcript');
+function renderTranscript(){
+  transcriptDiv.innerHTML='';
+  transcript.forEach((t,i)=>{
+    const div = document.createElement('div');
+    div.className = `transcript-line speaker-${t.speaker}`;
+    div.id = 't-'+i;
+    div.innerHTML = '<div class="time">' + formatTime(t.start) + '</div><div><strong>Speaker ' + t.speaker + ':</strong> ' + escapeHtml(t.text) + '</div>';
+    div.addEventListener('click', function(){audio.currentTime = t.start; audio.play();});
+    transcriptDiv.appendChild(div);
+  });
+}
+
+function formatTime(s){
+  const hh = Math.floor(s/3600); const mm = Math.floor((s%3600)/60); const ss = Math.floor(s%60);
+  return String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0')+':'+String(ss).padStart(2,'0');
+}
+function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+renderTranscript();
+
+/* ====== Audio + Visualizer ====== */
+const fileInput = document.getElementById('fileInput');
+const audio = document.getElementById('audio');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let audioCtx, analyser, sourceNode, dataArray, bufferLength;
+let animationId; const devicePixelRatio = window.devicePixelRatio || 1;
+
+function setupAudioFromFile(file){
+  if(!file) return;
+  if(audioCtx) audioCtx.close();
+  audio.src = URL.createObjectURL(file);
+  audio.load();
+  audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  sourceNode = audioCtx.createMediaElementSource(audio);
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 2048; bufferLength = analyser.frequencyBinCount; dataArray = new Uint8Array(bufferLength);
+  sourceNode.connect(analyser); analyser.connect(audioCtx.destination);
+  resizeCanvas(); draw();
+}
+
+fileInput.addEventListener('change', function(e){
+  const f = e.target.files[0]; if(f) setupAudioFromFile(f);
+});
+
+window.addEventListener('resize', resizeCanvas);
+function resizeCanvas(){canvas.width = canvas.clientWidth * devicePixelRatio; canvas.height = canvas.clientHeight * devicePixelRatio; ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0)}
+
+function draw(){
+  animationId = requestAnimationFrame(draw);
+  if(!analyser) return;
+  analyser.getByteFrequencyData(dataArray);
+
+  // clear
+  ctx.clearRect(0,0,canvas.width/devicePixelRatio,canvas.height/devicePixelRatio);
+  const w = canvas.clientWidth; const h = canvas.clientHeight;
+
+  // background gradient
+  const grad = ctx.createLinearGradient(0,0,w,0);
+  grad.addColorStop(0,'rgba(0,0,0,0)'); grad.addColorStop(1,'rgba(0,0,0,0.15)');
+  ctx.fillStyle = grad; ctx.fillRect(0,0,w,h);
+
+  // bars
+  const vizStyle = document.getElementById('vizStyle').value;
+  const barCount = Math.min(128, bufferLength);
+  const barWidth = (w / barCount) * 0.8;
+  let x=0;
+  for(let i=0;i<barCount;i++){
+    const v = dataArray[i]/255; const barH = v * h * 0.9;
+    const r = Math.floor(120 + v*135); const g = Math.floor(50 + v*120); const b = 255 - Math.floor(v*80);
+    if(vizStyle==='bars' || vizStyle==='combined'){
+      ctx.fillStyle = 'rgb('+r+','+g+','+b+')';
+      ctx.fillRect(x, h - barH, barWidth, barH);
+    }
+    x += barWidth + 1;
+  }
+
+  // waveform
+  if(vizStyle==='wave' || vizStyle==='combined'){
+    const timeData = new Uint8Array(analyser.fftSize);
+    analyser.getByteTimeDomainData(timeData);
+    ctx.lineWidth = 2; ctx.beginPath();
+    const slice = w / timeData.length; let xx = 0;
+    for(let i=0;i<timeData.length;i+=Math.max(1,Math.floor(timeData.length/800))){
+      const v = timeData[i]/128.0; const y = (v*0.5) * h;
+      if(i===0) ctx.moveTo(xx,y); else ctx.lineTo(xx,y);
+      xx += slice;
+    }
+    ctx.strokeStyle = 'rgba(0,229,168,0.9)'; ctx.stroke();
+  }
+
+  // glow when playing
+  if(!audio.paused){ ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle='rgba(0,229,168,0.02)'; ctx.fillRect(0,0,w,h); ctx.globalCompositeOperation='source-over'; }
+}
+
+/* ====== Syncing transcript with audio ====== */
+let lastActive = -1;
+function updateActiveLine(){
+  const t = audio.currentTime;
+  for(let i=0;i<transcript.length;i++){
+    const curr = transcript[i]; const next = transcript[i+1] ? transcript[i+1].start : Infinity;
+    const el = document.getElementById('t-'+i);
+    if(t>=curr.start && t<next){
+      if(lastActive!==i){
+        if(lastActive>=0){document.getElementById('t-'+lastActive).classList.remove('current');}
+        el.classList.add('current'); el.scrollIntoView({behavior:'smooth',block:'center'});
+        lastActive = i;
+      }
+      break;
+    }
+  }
+}
+
+audio.addEventListener('timeupdate', updateActiveLine);
+
+/* ====== Controls ====== */
+document.getElementById('playAll').addEventListener('click', function(){audio.play();});
+document.getElementById('pauseAll').addEventListener('click', function(){audio.pause();});
+document.getElementById('jumpBack').addEventListener('click', function(){audio.currentTime = Math.max(0,audio.currentTime - 5);});
+document.getElementById('jumpFwd').addEventListener('click', function(){audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 5);});
+
+/* ====== speaker color controls ====== */
+const s1c = document.getElementById('s1color'); const s2c = document.getElementById('s2color');
+s1c.addEventListener('input', function(e){document.documentElement.style.setProperty('--s1', e.target.value); document.querySelectorAll('.speaker-1').forEach(function(el){el.style.borderLeftColor = e.target.value})});
+s2c.addEventListener('input', function(e){document.documentElement.style.setProperty('--s2', e.target.value); document.querySelectorAll('.speaker-2').forEach(function(el){el.style.borderLeftColor = e.target.value})});
+
+// set initial colors
+s1c.dispatchEvent(new Event('input')); s2c.dispatchEvent(new Event('input'));
+
+document.getElementById('vizStyle').addEventListener('change', function(){document.getElementById('modeLabel').textContent = document.getElementById('vizStyle').value;});
+
+/* ====== theme toggle ====== */
+const themeToggle = document.getElementById('themeToggle'); themeToggle.addEventListener('click', function(){
+  const el = document.body; if(el.getAttribute('data-theme') === 'dark'){el.setAttribute('data-theme','light'); themeToggle.textContent='🌒'} else {el.setAttribute('data-theme','dark'); themeToggle.textContent='🌗'}
+});
+
+/* ====== Download transcript JSON ====== */
+document.getElementById('downloadBtn').addEventListener('click', function(){
+  const out = transcript.map(function(t,i){return {start:t.start, end: transcript[i+1]?transcript[i+1].start : (t.start+5), speaker:t.speaker, text:t.text}});
+  const blob = new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'transcript.json'; a.click();
+});
+
+/* ====== utilities ====== */
+function init(){ resizeCanvas(); renderTranscript(); }
+init();
+</script>
+</body>
+</html>

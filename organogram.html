@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Development Department Organogram</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #1a365d;
+            margin-bottom: 50px;
+            font-size: 2.2em;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        .org-chart {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+        }
+
+        /* Position boxes */
+        .position {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            min-width: 280px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .position:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .position.manager {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            min-width: 320px;
+        }
+
+        .position.supervisor {
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+            min-width: 300px;
+        }
+
+        .position.intern {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            border: 3px solid #22543d;
+        }
+
+        .position-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .position-subtitle {
+            font-size: 0.9em;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        /* Connection lines */
+        .connector {
+            width: 2px;
+            height: 40px;
+            background: linear-gradient(to bottom, #667eea, #4299e1);
+            margin: 0;
+        }
+
+        .connector.tall {
+            height: 50px;
+        }
+
+        /* Level container */
+        .level {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 30px;
+            margin-top: 0;
+            position: relative;
+        }
+
+        /* Horizontal connector for team level */
+        .h-connector {
+            position: relative;
+            width: 100%;
+            height: 50px;
+            margin-bottom: 20px;
+        }
+
+        .h-connector::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 25px;
+            background: linear-gradient(to bottom, #4299e1, #667eea);
+        }
+
+        .h-connector::after {
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: 10%;
+            right: 10%;
+            height: 2px;
+            background: linear-gradient(to right, #667eea, #4299e1);
+        }
+
+        .team-member {
+            position: relative;
+        }
+
+        .team-member::before {
+            content: '';
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 25px;
+            background: linear-gradient(to bottom, #4299e1, #667eea);
+        }
+
+        /* Print styles */
+        @media print {
+            body {
+                background: white;
+                padding: 20px;
+            }
+
+            .container {
+                box-shadow: none;
+                padding: 20px;
+            }
+
+            .position {
+                box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                break-inside: avoid;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.6em;
+            }
+
+            .level {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .position {
+                min-width: 240px;
+            }
+
+            .h-connector::after {
+                display: none;
+            }
+
+            .team-member::before {
+                display: none;
+            }
+        }
+
+        /* Legend */
+        .legend {
+            margin-top: 50px;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 10px;
+            border-left: 4px solid #48bb78;
+        }
+
+        .legend h3 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .legend p {
+            color: #4a5568;
+            line-height: 1.6;
+            font-size: 0.95em;
+        }
+
+        .legend strong {
+            color: #22543d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Development Department Organogram</h1>
+        
+        <div class="org-chart">
+            <!-- Level 1: Manager -->
+            <div class="position manager">
+                <div class="position-title">IT / Development Manager</div>
+                <div class="position-subtitle">Strategic Leadership & Oversight</div>
+            </div>
+
+            <div class="connector tall"></div>
+
+            <!-- Level 2: Supervisor -->
+            <div class="position supervisor">
+                <div class="position-title">Development Supervisor / Team Lead</div>
+                <div class="position-subtitle">Automation & POS Systems</div>
+            </div>
+
+            <div class="h-connector"></div>
+
+            <!-- Level 3: Team Members -->
+            <div class="level">
+                <div class="team-member">
+                    <div class="position">
+                        <div class="position-title">Automation Developer</div>
+                        <div class="position-subtitle">AutoIT Scripting</div>
+                    </div>
+                </div>
+
+                <div class="team-member">
+                    <div class="position">
+                        <div class="position-title">POS Systems Developer</div>
+                        <div class="position-subtitle">Testing & Integration</div>
+                    </div>
+                </div>
+
+                <div class="team-member">
+                    <div class="position intern">
+                        <div class="position-title">Development Intern</div>
+                        <div class="position-subtitle">AutoIT, POS Automation & Testing</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="legend">
+            <h3>📍 Current Position</h3>
+            <p><strong>Development Intern</strong> - Responsible for AutoIT scripting, POS system automation, testing procedures, remote support, and database management under the guidance of the Development Supervisor.</p>
+        </div>
+    </div>
+</body>
+</html>

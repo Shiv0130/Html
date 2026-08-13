@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Standard Normal Distribution</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .title {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .graph-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .axis-label {
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .probability-text {
+            font-size: 16px;
+            font-weight: bold;
+            color: #2563eb;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .legend {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            border: 1px solid #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="title">Standard Normal Distribution</h2>
+        <h3 class="title">P(-1.63 < Z < 1.83) = 0.9148</h3>
+        
+        <div class="graph-container">
+            <svg id="graph" width="700" height="400"></svg>
+        </div>
+        
+        <div class="probability-text">
+            Shaded Area = 0.9148 (91.48%)
+        </div>
+        
+        <div class="legend">
+            <h4>Legend:</h4>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #3b82f6; opacity: 0.7;"></div>
+                <span>P(-1.63 < Z < 1.83) = 0.9148</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #ef4444; opacity: 0.3;"></div>
+                <span>Left tail: P(Z < -1.63) = 0.0516</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #ef4444; opacity: 0.3;"></div>
+                <span>Right tail: P(Z > 1.83) = 0.0336</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set up dimensions and margins
+        const margin = {top: 20, right: 30, bottom: 50, left: 50};
+        const width = 700 - margin.left - margin.right;
+        const height = 400 - margin.top - margin.bottom;
+
+        // Create SVG
+        const svg = d3.select("#graph")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom);
+
+        const g = svg.append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        // Define normal distribution function
+        function normalPDF(x, mean = 0, std = 1) {
+            return (1 / (std * Math.sqrt(2 * Math.PI))) * 
+                   Math.exp(-0.5 * Math.pow((x - mean) / std, 2));
+        }
+
+        // Create scales
+        const xScale = d3.scaleLinear()
+            .domain([-4, 4])
+            .range([0, width]);
+
+        const yScale = d3.scaleLinear()
+            .domain([0, 0.45])
+            .range([height, 0]);
+
+        // Generate data for the curve
+        const data = [];
+        for (let x = -4; x <= 4; x += 0.01) {
+            data.push({x: x, y: normalPDF(x)});
+        }
+
+        // Create line generator
+        const line = d3.line()
+            .x(d => xScale(d.x))
+            .y(d => yScale(d.y))
+            .curve(d3.curveCardinal);
+
+        // Draw axes
+        g.append("g")
+            .attr("transform", `translate(0,${height})`)
+            .call(d3.axisBottom(xScale))
+            .append("text")
+            .attr("x", width / 2)
+            .attr("y", 40)
+            .attr("fill", "black")
+            .style("text-anchor", "middle")
+            .style("font-size", "14px")
+            .style("font-weight", "bold")
+            .text("Z-score");
+
+        g.append("g")
+            .call(d3.axisLeft(yScale))
+            .append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", -35)
+            .attr("x", -height / 2)
+            .attr("fill", "black")
+            .style("text-anchor", "middle")
+            .style("font-size", "14px")
+            .style("font-weight", "bold")
+            .text("Probability Density");
+
+        // Create area generators for shading
+        const areaGenerator = d3.area()
+            .x(d => xScale(d.x))
+            .y0(height)
+            .y1(d => yScale(d.y))
+            .curve(d3.curveCardinal);
+
+        // Shade the area between -1.63 and 1.83 (main probability)
+        const shadeData = data.filter(d => d.x >= -1.63 && d.x <= 1.83);
+        g.append("path")
+            .datum(shadeData)
+            .attr("fill", "#3b82f6")
+            .attr("fill-opacity", 0.7)
+            .attr("d", areaGenerator);
+
+        // Shade left tail (< -1.63)
+        const leftTailData = data.filter(d => d.x <= -1.63);
+        g.append("path")
+            .datum(leftTailData)
+            .attr("fill", "#ef4444")
+            .attr("fill-opacity", 0.3)
+            .attr("d", areaGenerator);
+
+        // Shade right tail (> 1.83)
+        const rightTailData = data.filter(d => d.x >= 1.83);
+        g.append("path")
+            .datum(rightTailData)
+            .attr("fill", "#ef4444")
+            .attr("fill-opacity", 0.3)
+            .attr("d", areaGenerator);
+
+        // Draw the normal curve
+        g.append("path")
+            .datum(data)
+            .attr("fill", "none")
+            .attr("stroke", "#1f2937")
+            .attr("stroke-width", 2)
+            .attr("d", line);
+
+        // Add vertical lines at z = -1.63 and z = 1.83
+        g.append("line")
+            .attr("x1", xScale(-1.63))
+            .attr("x2", xScale(-1.63))
+            .attr("y1", 0)
+            .attr("y2", height)
+            .attr("stroke", "#dc2626")
+            .attr("stroke-width", 2)
+            .attr("stroke-dasharray", "5,5");
+
+        g.append("line")
+            .attr("x1", xScale(1.83))
+            .attr("x2", xScale(1.83))
+            .attr("y1", 0)
+            .attr("y2", height)
+            .attr("stroke", "#dc2626")
+            .attr("stroke-width", 2)
+            .attr("stroke-dasharray", "5,5");
+
+        // Add labels for the z-values
+        g.append("text")
+            .attr("x", xScale(-1.63))
+            .attr("y", height + 20)
+            .attr("text-anchor", "middle")
+            .style("font-size", "12px")
+            .style("font-weight", "bold")
+            .style("fill", "#dc2626")
+            .text("z = -1.63");
+
+        g.append("text")
+            .attr("x", xScale(1.83))
+            .attr("y", height + 20)
+            .attr("text-anchor", "middle")
+            .style("font-size", "12px")
+            .style("font-weight", "bold")
+            .style("fill", "#dc2626")
+            .text("z = 1.83");
+
+        // Add probability labels
+        g.append("text")
+            .attr("x", xScale(0))
+            .attr("y", yScale(0.2))
+            .attr("text-anchor", "middle")
+            .style("font-size", "14px")
+            .style("font-weight", "bold")
+            .style("fill", "white")
+            .text("0.9148");
+
+        g.append("text")
+            .attr("x", xScale(-2.5))
+            .attr("y", yScale(0.05))
+            .attr("text-anchor", "middle")
+            .style("font-size", "10px")
+            .style("font-weight", "bold")
+            .style("fill", "#dc2626")
+            .text("0.0516");
+
+        g.append("text")
+            .attr("x", xScale(2.5))
+            .attr("y", yScale(0.05))
+            .attr("text-anchor", "middle")
+            .style("font-size", "10px")
+            .style("font-weight", "bold")
+            .style("fill", "#dc2626")
+            .text("0.0336");
+    </script>
+</body>
+</html>

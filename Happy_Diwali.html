@@ -1,0 +1,501 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <a href="https://youtu.be/zpVsbxbIcsU?si=gDJSRMcTKw4Q0IbU"><title>Happy Diwali</title></a>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(to bottom, #0a0e27, #1a1a3e);
+            overflow: hidden;
+            font-family: 'Georgia', serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            text-align: center;
+            z-index: 10;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 4rem;
+            color: #ffd700;
+            text-shadow: 0 0 20px #ff6b00, 0 0 40px #ff6b00;
+            animation: glow 2s ease-in-out infinite alternate;
+            margin-bottom: 20px;
+        }
+
+        .diya {
+            font-size: 5rem;
+            animation: flicker 1.5s ease-in-out infinite;
+            margin: 20px 0;
+        }
+
+        .message {
+            font-size: 1.5rem;
+            color: #ffeb3b;
+            text-shadow: 0 0 10px #ff9800;
+            margin-top: 20px;
+        }
+
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 20px #ff6b00, 0 0 40px #ff6b00;
+            }
+            to {
+                text-shadow: 0 0 30px #ff3d00, 0 0 60px #ff3d00, 0 0 80px #ff3d00;
+            }
+        }
+
+        @keyframes flicker {
+            0%, 100% {
+                transform: scale(1);
+                filter: brightness(1);
+            }
+            50% {
+                transform: scale(1.1);
+                filter: brightness(1.3);
+            }
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .sparkle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: gold;
+            border-radius: 50%;
+            animation: sparkleAnim 1s ease-out forwards;
+            pointer-events: none;
+        }
+
+        @keyframes sparkleAnim {
+            0% {
+                transform: scale(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1) rotate(360deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="fireworks"></canvas>
+    <div class="container">
+        <h1>Happy Diwali!</h1>
+        <div class="diya">🪔</div>
+        <p class="message">May this festival of lights bring joy, prosperity, and happiness to your life!</p>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('fireworks');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.velocity = {
+                    x: (Math.random() - 0.5) * 8,
+                    y: (Math.random() - 0.5) * 8
+                };
+                this.alpha = 1;
+                this.friction = 0.98;
+                this.gravity = 0.3;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.restore();
+            }
+
+            update() {
+                this.velocity.x *= this.friction;
+                this.velocity.y *= this.friction;
+                this.velocity.y += this.gravity;
+                this.x += this.velocity.x;
+                this.y += this.velocity.y;
+                this.alpha -= 0.015;
+            }
+        }
+
+        class Firework {
+            constructor(x, y) {
+                this.x = x;
+                this.y = canvas.height;
+                this.targetY = y;
+                this.velocity = {
+                    x: 0,
+                    y: -8
+                };
+                this.exploded = false;
+                this.particles = [];
+                this.colors = ['#ff0000', '#ff6b00', '#ffd700', '#ffeb3b', '#ff1744', '#ff9100'];
+            }
+
+            draw() {
+                if (!this.exploded) {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+                    ctx.fillStyle = '#fff';
+                    ctx.fill();
+                }
+            }
+
+            explode() {
+                const particleCount = 80;
+                const color = this.colors[Math.floor(Math.random() * this.colors.length)];
+                
+                for (let i = 0; i < particleCount; i++) {
+                    this.particles.push(new Particle(this.x, this.y, color));
+                }
+            }
+
+            update() {
+                if (!this.exploded) {
+                    this.y += this.velocity.y;
+                    
+                    if (this.y <= this.targetY) {
+                        this.exploded = true;
+                        this.explode();
+                    }
+                } else {
+                    this.particles.forEach((particle, index) => {
+                        particle.update();
+                        particle.draw();
+                        
+                        if (particle.alpha <= 0) {
+                            this.particles.splice(index, 1);
+                        }
+                    });
+                }
+            }
+        }
+
+        let fireworks = [];
+
+        function animate() {
+            ctx.fillStyle = 'rgba(10, 14, 39, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            fireworks.forEach((firework, index) => {
+                firework.draw();
+                firework.update();
+
+                if (firework.exploded && firework.particles.length === 0) {
+                    fireworks.splice(index, 1);
+                }
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        function launchFirework() {
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * (canvas.height * 0.4) + canvas.height * 0.1;
+            fireworks.push(new Firework(x, y));
+        }
+
+        setInterval(launchFirework, 800);
+        animate();
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Add sparkles on click
+        document.addEventListener('click', (e) => {
+            for (let i = 0; i < 15; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.className = 'sparkle';
+                sparkle.style.left = e.clientX + 'px';
+                sparkle.style.top = e.clientY + 'px';
+                sparkle.style.transform = `translate(${(Math.random() - 0.5) * 50}px, ${(Math.random() - 0.5) * 50}px)`;
+                document.body.appendChild(sparkle);
+                
+                setTimeout(() => sparkle.remove(), 1000);
+            }
+        });
+    </script>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Diwali</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(to bottom, #0a0e27, #1a1a3e);
+            overflow: hidden;
+            font-family: 'Georgia', serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            text-align: center;
+            z-index: 10;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 4rem;
+            color: #ffd700;
+            text-shadow: 0 0 20px #ff6b00, 0 0 40px #ff6b00;
+            animation: glow 2s ease-in-out infinite alternate;
+            margin-bottom: 20px;
+        }
+
+        .diya {
+            font-size: 5rem;
+            animation: flicker 1.5s ease-in-out infinite;
+            margin: 20px 0;
+        }
+
+        .message {
+            font-size: 1.5rem;
+            color: #ffeb3b;
+            text-shadow: 0 0 10px #ff9800;
+            margin-top: 20px;
+        }
+
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 20px #ff6b00, 0 0 40px #ff6b00;
+            }
+            to {
+                text-shadow: 0 0 30px #ff3d00, 0 0 60px #ff3d00, 0 0 80px #ff3d00;
+            }
+        }
+
+        @keyframes flicker {
+            0%, 100% {
+                transform: scale(1);
+                filter: brightness(1);
+            }
+            50% {
+                transform: scale(1.1);
+                filter: brightness(1.3);
+            }
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .sparkle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: gold;
+            border-radius: 50%;
+            animation: sparkleAnim 1s ease-out forwards;
+            pointer-events: none;
+        }
+
+        @keyframes sparkleAnim {
+            0% {
+                transform: scale(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1) rotate(360deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="fireworks"></canvas>
+    <div class="container">
+        <a href="https://youtu.be/zpVsbxbIcsU?si=gDJSRMcTKw4Q0IbU" target="_blank" style="text-decoration: none;"><h1>Happy Diwali!</h1></a>
+        <div class="diya">🪔</div>
+        <p class="message">May this festival of lights bring joy, prosperity, and happiness to your life!</p>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('fireworks');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.velocity = {
+                    x: (Math.random() - 0.5) * 8,
+                    y: (Math.random() - 0.5) * 8
+                };
+                this.alpha = 1;
+                this.friction = 0.98;
+                this.gravity = 0.3;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.restore();
+            }
+
+            update() {
+                this.velocity.x *= this.friction;
+                this.velocity.y *= this.friction;
+                this.velocity.y += this.gravity;
+                this.x += this.velocity.x;
+                this.y += this.velocity.y;
+                this.alpha -= 0.015;
+            }
+        }
+
+        class Firework {
+            constructor(x, y) {
+                this.x = x;
+                this.y = canvas.height;
+                this.targetY = y;
+                this.velocity = {
+                    x: 0,
+                    y: -8
+                };
+                this.exploded = false;
+                this.particles = [];
+                this.colors = ['#ff0000', '#ff6b00', '#ffd700', '#ffeb3b', '#ff1744', '#ff9100'];
+            }
+
+            draw() {
+                if (!this.exploded) {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+                    ctx.fillStyle = '#fff';
+                    ctx.fill();
+                }
+            }
+
+            explode() {
+                const particleCount = 80;
+                const color = this.colors[Math.floor(Math.random() * this.colors.length)];
+                
+                for (let i = 0; i < particleCount; i++) {
+                    this.particles.push(new Particle(this.x, this.y, color));
+                }
+            }
+
+            update() {
+                if (!this.exploded) {
+                    this.y += this.velocity.y;
+                    
+                    if (this.y <= this.targetY) {
+                        this.exploded = true;
+                        this.explode();
+                    }
+                } else {
+                    this.particles.forEach((particle, index) => {
+                        particle.update();
+                        particle.draw();
+                        
+                        if (particle.alpha <= 0) {
+                            this.particles.splice(index, 1);
+                        }
+                    });
+                }
+            }
+        }
+
+        let fireworks = [];
+
+        function animate() {
+            ctx.fillStyle = 'rgba(10, 14, 39, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            fireworks.forEach((firework, index) => {
+                firework.draw();
+                firework.update();
+
+                if (firework.exploded && firework.particles.length === 0) {
+                    fireworks.splice(index, 1);
+                }
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        function launchFirework() {
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * (canvas.height * 0.4) + canvas.height * 0.1;
+            fireworks.push(new Firework(x, y));
+        }
+
+        setInterval(launchFirework, 800);
+        animate();
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Add sparkles on click
+        document.addEventListener('click', (e) => {
+            for (let i = 0; i < 15; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.className = 'sparkle';
+                sparkle.style.left = e.clientX + 'px';
+                sparkle.style.top = e.clientY + 'px';
+                sparkle.style.transform = `translate(${(Math.random() - 0.5) * 50}px, ${(Math.random() - 0.5) * 50}px)`;
+                document.body.appendChild(sparkle);
+                
+                setTimeout(() => sparkle.remove(), 1000);
+            }
+        });
+    </script>
+</body>
+</html>

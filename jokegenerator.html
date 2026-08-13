@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Joke Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * { 
+            padding: 0; 
+            margin: 0; 
+            box-sizing: border-box; 
+            font-family: "Rubik", sans-serif; 
+        }
+        body { 
+            background-color: #fab22e; 
+        }
+        .wrapper { 
+            width: 80vmin; 
+            padding: 50px 40px; 
+            background-color: #15161a; 
+            position: absolute; 
+            transform: translate(-50%, -50%); 
+            top: 50%; 
+            left: 50%; 
+            border-radius: 5px; 
+            box-shadow: 20px 20px 40px rgba(97, 63, 0, 0.4); 
+        }
+        span { 
+            display: block; 
+            text-align: center; 
+            font-size: 100px; 
+        }
+        p { 
+            font-size: 16px; 
+            color: #ffffff; 
+            font-weight: 400; 
+            text-align: center; 
+            word-wrap: break-word; 
+            line-height: 35px; 
+            margin: 30px 0; 
+            opacity: 0; 
+        }
+        .fade { 
+            opacity: 1; 
+            transition: opacity 1.5s; 
+        }
+        button { 
+            display: block; 
+            background-color: #fab22e; 
+            border: none; 
+            padding: 5px; 
+            font-size: 18px; 
+            color: #171721; 
+            font-weight: 600; 
+            padding: 12px 25px; 
+            margin: 10px auto; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            outline: none; 
+        }
+        .audio-button { 
+            background-color: #4CAF50; 
+        }
+        /* Hide YouTube video but keep audio playing */
+        #youtube-player {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <span>&#128514;</span>
+        <p id="joke"></p>
+        <button id="btn">Get Random Joke</button>
+        <button id="speak-btn" class="audio-button">🔊 Speak Joke</button>
+    </div>
+
+    <!-- Hidden YouTube player for sound -->
+    <div id="youtube-player"></div>
+
+    <!-- Include YouTube API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+    
+    <script>
+        const jokeContainer = document.getElementById("joke");
+        const btn = document.getElementById("btn");
+        const speakBtn = document.getElementById("speak-btn");
+        const url = "https://v2.jokeapi.dev/joke/Any?blacklistFlags=nsfw,religious,political,racist,sexist,explicit&type=single";
+        
+        let player;
+        let playerReady = false;
+
+        // Initialize YouTube player
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('youtube-player', {
+                height: '1',
+                width: '1',
+                videoId: 'ft4f3zkh_MU', // YouTube video ID from your link
+                playerVars: {
+                    'autoplay': 0,
+                    'controls': 0
+                },
+                events: {
+                    'onReady': onPlayerReady
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            playerReady = true;
+        }
+
+        // Play YouTube sound at specific point (7 seconds in)
+        function playDrumAndLaugh() {
+            if (playerReady) {
+                // Seek to 7 seconds (where the drum sound starts)
+                player.seekTo(7, true);
+                player.playVideo();
+                
+                // Stop after 6 seconds (enough for drum and laugh)
+                setTimeout(() => {
+                    player.pauseVideo();
+                }, 6000);
+            }
+        }
+
+        let getJoke = () => { 
+            jokeContainer.classList.remove("fade"); 
+            fetch(url) 
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(item => { 
+                jokeContainer.textContent = `${item.joke}`; 
+                jokeContainer.classList.add("fade"); 
+            })
+            .catch(error => {
+                console.error("Error fetching joke:", error);
+                jokeContainer.textContent = "Oops! Could not fetch a joke.";
+                jokeContainer.classList.add("fade");
+            }); 
+        }
+        
+        let speakJoke = () => { 
+            const jokeText = jokeContainer.textContent; 
+            if (jokeText) { 
+                const utterance = new SpeechSynthesisUtterance(jokeText); 
+                
+                // After joke is spoken, play the drum and laugh sound
+                utterance.onend = function() {
+                    playDrumAndLaugh();
+                };
+                
+                speechSynthesis.speak(utterance); 
+            } 
+        }
+        
+        btn.addEventListener("click", getJoke);
+        speakBtn.addEventListener("click", speakJoke);
+        
+        // Optional: Fetch a joke on page load with a slight delay
+        window.addEventListener('load', () => {
+            setTimeout(getJoke, 500);
+        });
+    </script>
+</body>
+</html>
