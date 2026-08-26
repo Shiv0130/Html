@@ -809,8 +809,8 @@
 </body>
 </html> -->
 <!-- Recent script 2025 -->
-
-<!DOCTYPE html>
+<!--Commented out in 2026 for update-->
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1386,6 +1386,585 @@
         inputText.value = '';
     });
 });
+    </script>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>AI Voice Assistant</title>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #1a1a1a;
+            --button-bg: #f0f0f0;
+            --border-color: #ddd;
+        }
+
+        body.dark-mode {
+            --bg-color: #15161a;
+            --text-color: #ffffff;
+            --button-bg: #2a2b30;
+            --border-color: #444;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            text-align: center;
+        }
+        h1 { font-size: 2em; }
+        #assistant, .status { margin-bottom: 20px; }
+        #listening, #processing {
+            display: inline-block;
+            margin-right: 10px;
+        }
+        #output {
+            margin-top: 20px;
+            text-align: left;
+        }
+        #output p { margin-bottom: 10px; }
+        input[type="text"] {
+            width: 70%;
+            padding: 10px;
+            margin-right: 10px;
+            background-color: var(--button-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+            flex-shrink: 0;
+            background-color: var(--button-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+        button:hover { opacity: 0.8; }
+
+        #theme-toggle {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            z-index: 100;
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            padding: 0;
+            font-size: 18px;
+        }
+
+        .suggestions-container {
+            margin-top: 15px;
+            text-align: left;
+        }
+        .suggestions-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .suggestions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 8px;
+            max-width: 100%;
+        }
+        .suggestion-item {
+            background: var(--button-bg);
+            color: var(--text-color);
+            padding: 8px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background-color 0.2s;
+            border: 1px solid var(--border-color);
+        }
+        .suggestion-item:hover { opacity: 0.8; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/annyang/2.6.1/annyang.min.js"></script>
+</head>
+<body>
+    <button id="theme-toggle">🌙</button>
+    <div class="container">
+        <h1> AI Voice Prototype</h1>
+        <input id="inputtext" type="text">
+
+        <div class="button-container">
+            <button id="start">🎙️</button>
+            <button id="speak">🔈</button>
+        </div>
+
+        <div class="suggestions-container">
+            <div class="suggestions-title">Try saying:</div>
+            <div class="suggestions-grid">
+                <div class="suggestion-item" data-command="hello pva">👋 Hello PVA</div>
+                <div class="suggestion-item" data-command="what time is it">⏰ What time is it</div>
+                <div class="suggestion-item" data-command="what's the weather">🌤️ What's the weather</div>
+                <div class="suggestion-item" data-command="open youtube">📺 Open YouTube</div>
+                <div class="suggestion-item" data-command="open moodle">🎓 Open Moodle</div>
+                <div class="suggestion-item" data-command="open ienabler">📊 Open iEnabler</div>
+                <div class="suggestion-item" data-command="tell me a joke">😄 Tell me a joke</div>
+                <div class="suggestion-item" data-command="search for cars">🔍 Search for cars</div>
+                <div class="suggestion-item" data-command="play relaxing music">🎵 Play relaxing music</div>
+                <div class="suggestion-item" data-command="open gmail">📧 Open Gmail</div>
+                <div class="suggestion-item" data-command="what can you do">❓ What can you do</div>
+                <div class="suggestion-item" data-command="open google scholar">📚 Open Google Scholar</div>
+            </div>
+        </div>
+
+        <div id="output"></div>
+    </div>
+    <script>
+        // Sanitization function to prevent XSS
+        function sanitizeInput(input) {
+            const div = document.createElement('div');
+            div.textContent = input;
+            return div.innerHTML;
+        }
+
+        // Safe URL encoding function
+        function safeUrlEncode(input) {
+            return encodeURIComponent(input).replace(/[!'()*]/g, function(c) {
+                return '%' + c.charCodeAt(0).toString(16).toUpperCase();
+            });
+        }
+
+        // Elements
+        const startBtn = document.getElementById("start");
+        const speakBtn = document.getElementById("speak");
+        const inputText = document.getElementById("inputtext");
+        const outputDiv = document.getElementById("output");
+        const themeToggle = document.getElementById("theme-toggle");
+
+        // Theme toggle
+        themeToggle.addEventListener("click", () => {
+            document.body.classList.toggle("dark-mode");
+            themeToggle.textContent = document.body.classList.contains("dark-mode") ? "☀️" : "🌙";
+        });
+
+        // Suggestion buttons
+        document.querySelectorAll('.suggestion-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const command = this.getAttribute('data-command');
+                inputText.value = command;
+                processCommand(command);
+                inputText.value = '';
+            });
+        });
+
+        // Speech recognition setup
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+
+        // Get current weather using OpenWeatherMap API
+        async function getCurrentWeather() {
+            const apiKey = '8f2751d8f8683d4abfc8076553e81b54';
+            const city = 'Durban';
+            const url = `https://api.openweathermap.org/data/2.5/weather?q=${safeUrlEncode(city)}&units=metric&appid=${apiKey}`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    return `The current weather in ${sanitizeInput(city)} is ${sanitizeInput(data.weather[0].description)} with a temperature of ${data.main.temp.toFixed(1)}°C.`;
+                } else {
+                    return `Sorry, I could not fetch the weather data. Error: ${sanitizeInput(data.message)}`;
+                }
+            } catch (error) {
+                console.error("Weather fetch error:", error);
+                return 'Sorry, I could not fetch the weather data at the moment.';
+            }
+        }
+
+        // Arrays of possible commands
+        const commands = {
+            greeting: ["hello", "hi", "hey", "hi pva", "hey pva", "hello pva", "hi there pva", "hello there pva", "hey there pva"],
+            pvaDefinition: ["what does pva stand for", "what is pva", "pva is", "pva"],
+            time: ["what time is it", "what is the time", "the time now is"],
+            weather: ["what is the weather", "what's the weather", "tell me the weather", "what is the current weather", "the weather is", "what is the weather like today"],
+            youtube: ["open youtube"],
+            youtubeSearch: ["search on youtube for", "search youtube for", "youtube search for", "find on youtube", "look up on youtube"],
+            search: ["search for", "look for"],
+            research: ["lets do some research", "time to research", "research", "look it up", "look it up on google scholar", "research time", "research articles", "open research articles", "open google scholar"],
+            play: ["play"],
+            other: ["open chatgpt", "open studysmarter", "open w3schools", "open pdf summarizer", "open google scholar"],
+            help: ["what can you do", "give me a list of commands", "how can you help me", "commands"],
+            joke: ["tell me a joke", "say something funny", "make me laugh","open joke generator"],
+            summarize: ["sum this up", "summarize", "open quilbot"],
+            plagiarism: ["is there any plagiarism", "scan for plagiarism", "open zerogpt", "plagiarism"],
+            amazonCourse: ["open amazon course", "open cloud computing course", "open amazon cloud computing course", "open cloud computing", "run cloud foundations", "run cloud computing", "open cloud course"],
+            checkMarks: ["results", "results?", "check academic results", "what are my marks", "results for ca test", "results for exam", "academic record", "open academic record", "open ienabler"],
+            php: ["run php script", "run php code", "open php", "run the php", "run this php script", "run script"],
+            whatsapp: ["open whatsapp", "open whatsapp web", "run whatsapp"],
+            Mathpapa: ["open mathpapa", "run mathpapa", "calculate for me","compute","calculate"],
+            Drawio: ["open draw.io","run draw.io","draw for me","design for me"],
+            stealthWriter: ["open stealthWriter","Open Stealthwriter"],
+            canva:["Open Canva","Go on Canva","Go to Canva"],
+            Zoom:["Open Zoom","Go on Zoom","Go to Zoom"],
+            pdfdrive:["Open PDFDrive","OpenPdfDrive","Get me a textbook"],
+            trackAndroid: ["Find my android","where is my android","help me find my android","Find android"],
+            trackIphone: ["Find my iPhone","find my iphone","Where's my iPhone","Find iPhone"],
+            solvely: ["open solvely", "solvely", "math solver", "take a picture math solver"],
+            owll: ["open owll", "owll", "owll ai"],
+            notability: ["open notability","notability","notability ai"]
+        };
+
+        // Recognize command by matching against an array of possible commands
+        function recognizeCommand(command, possibleCommands) {
+            return possibleCommands.some(possibleCommand => 
+                command.toLowerCase().includes(possibleCommand.toLowerCase())
+            );
+        }
+
+        // Format time in human-readable format
+        function formatTime(hours, minutes) {
+            const period = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12 || 12;
+            return `${hours}:${minutes < 10 ? '0' + minutes : minutes} ${period}`;
+        }
+
+        // Function to speak out text
+        function readOut(message) {
+            const speech = new SpeechSynthesisUtterance(sanitizeInput(message));
+            speech.volume = 1;
+            speech.voice = speechSynthesis.getVoices().find(voice => voice.name === 'Google UK English Male');
+            window.speechSynthesis.speak(speech);
+        }
+
+        // Extract PHP script name from command
+        function extractPhpScriptName(command) {
+            const patterns = [
+                /run php script\s+(\w+(?:\.\w+)?)/i,
+                /run php\s+(\w+(?:\.\w+)?)/i,
+                /open php\s+(\w+(?:\.\w+)?)/i,
+                /run the php\s+(\w+(?:\.\w+)?)/i,
+                /run this php script\s+(\w+(?:\.\w+)?)/i,
+                /run script\s+(\w+(?:\.\w+)?)/i
+            ];
+            
+            for (let pattern of patterns) {
+                const match = command.match(pattern);
+                if (match && match[1]) {
+                    return match[1].endsWith('.php') ? match[1] : `${match[1]}.php`;
+                }
+            }
+            
+            return "hello.php";
+        }
+
+        // Function to handle voice triggers and process commands
+        async function processCommand(command) {
+            command = sanitizeInput(command.toLowerCase());
+            let response = "";
+
+            if (recognizeCommand(command, commands.greeting)) {
+                response = "Hi there, I am PVA, how can I help you?";
+            } else if (recognizeCommand(command, commands.pvaDefinition)) {
+                response = "PVA stands for Prototype Virtual Assistant";
+            } else if (recognizeCommand(command, commands.youtube)) {
+                response = "Opening YouTube, Sir";
+                window.open("https://www.youtube.com/");
+            } else if (recognizeCommand(command, commands.time)) {
+                let now = new Date();
+                response = `It is ${formatTime(now.getHours(), now.getMinutes())} right now.`;
+            } else if (recognizeCommand(command, commands.weather)) {
+                response = await getCurrentWeather();
+            } else if (recognizeCommand(command, commands.youtubeSearch) || (/^(search for|look for)/i.test(command) && /\bon youtube\b/i.test(command))) {
+                let searchTerm = command
+                    .replace(/search on youtube for|search youtube for|youtube search for|find on youtube|look up on youtube/i, "")
+                    .replace(/^(search for|look for)\s+/i, "")
+                    .replace(/\s*on youtube\s*/i, "")
+                    .trim();
+                response = `Searching YouTube for ${sanitizeInput(searchTerm)}, Sir`;
+                window.open(`https://www.youtube.com/results?search_query=${safeUrlEncode(searchTerm)}`);
+            } else if (recognizeCommand(command, commands.search)) {
+                let searchTerm = command.replace(/search for|look for/i, "").trim();
+                response = `Searching for ${sanitizeInput(searchTerm)}`;
+                window.open(`https://www.google.com/search?q=${safeUrlEncode(searchTerm)}`);
+            } else if (recognizeCommand(command, commands.play)) {
+                let song = command.replace(/play/i, "").trim();
+                response = `Playing ${sanitizeInput(song)} on YouTube Music, Sir`;
+                window.open(`https://music.youtube.com/search?q=${safeUrlEncode(song)}`);
+            } else if (command.includes("open chatgpt")) {
+                response = "Opening ChatGPT, Sir";
+                window.open("https://chat.openai.com/");
+            } else if (command.includes("open gemini")) {
+                response = "Opening Gemini, Sir";
+                window.open("https://gemini.google.com/");
+            } else if (command.includes("open blackbox")) {
+                response = "Opening Blackbox, Sir";
+                window.open("https://www.blackbox.ai/");
+            } else if (command.includes("open claude ")) {
+                response = "Opening Claude AI, Sir";
+                window.open("https://claude.ai/new");
+            } else if (command.includes("open studysmarter")) {
+                response = "Opening StudySmarter, Sir";
+                window.open("https://app.studysmarter.de/home");
+            } else if (command.includes("open w3schools")) {
+                response = "Opening W3Schools, Sir";
+                window.open("https://www.w3schools.com/");
+            } else if (command.includes("open sololearn")) {
+                response = "Opening SoloLearn, Sir";
+                window.open("https://www.sololearn.com/en/codes");
+            } else if(command.includes("open khan academy")){
+                response = "Opening Khan Academy, Sir";
+                window.open("https://www.khanacademy.org/profile/me/courses");
+            } else if (command.includes("open pdf summarizer")) {
+                response = "Opening PDF Summarizer, Sir";
+                window.open("https://smallpdf.com/ai-pdf");
+            } else if (recognizeCommand(command, commands.research)) {
+                response = "Opening Google Scholar, Sir";
+                window.open("https://scholar.google.com/");
+            } else if (recognizeCommand(command, commands.help)) {
+                response = "Here is a list of commands I can recognize: \n" +
+                    "1. Greetings\n2. Ask about PVA\n3. Get the time\n4. Get the weather\n" +
+                    "5. Open YouTube\n6. Search Google\n7. Search YouTube\n8. Play a song\n9. Tell me a joke\n" +
+                    "10. Open various websites\n11. Check academic results\n12. Run PHP scripts\n" +
+                    "13. Open Amazon cloud computing course\n14. Open WhatsApp Web\n15. Open mathpapa";
+            } else if (recognizeCommand(command, commands.joke)) {
+                response = "Opening joke generator";
+                window.open("jokegenerator.html");
+            } else if (recognizeCommand(command, commands.amazonCourse)) {
+                response = "Opening Amazon course Sir";
+                window.open("https://awsacademy.instructure.com/courses/79868/modules/items/7215080");
+            } else if (command.includes("open gmail")) {
+                response = "Opening gmail Sir";
+                window.open("https://mail.google.com/mail/u/0/?ogbl#inbox");
+            } else if (recognizeCommand(command, commands.summarize)) {
+                response = "Opening quilbot for you Sir";
+                window.open("https://quillbot.com/paragraph-rewriter?msockid=00eb042c2c1a604b168316992de7611b");
+            } else if (recognizeCommand(command, commands.plagiarism)) {
+                response = "Opening zeroGPT Sir";
+                window.open("https://www.zerogpt.com/");
+            } else if (command.includes("open google")) {
+                response = "Opening Google Sir";
+                window.open("https://www.google.co.za/?gws_rd=ssl");
+            } else if (command.includes("open moodle")) {
+                response = "Opening Moodle Sir";
+                window.open("https://learning.richfield.ac.za/HET/login/index.php");
+            } else if (recognizeCommand(command, commands.checkMarks)) {
+                response = "Opening Richfield iEnabler Sir";
+                window.open("https://rgitie.richfield.ac.za/pls/rgitp/w99pkg.mi_login");
+            } else if (recognizeCommand(command, commands.php)) {
+                const scriptName = extractPhpScriptName(command);
+                response = `Running ${scriptName} for you Sir`;
+                window.open(`http://localhost/${scriptName}`);
+            } else if(command.includes("open brilliant")){
+                response ="Opening Brilliant Sir ";
+                window.open("https://brilliant.org/home/");
+            } else if(command.includes("open afrihost")){
+                response ="Opening afrihost Sir ";
+                window.open("https://clientzone.afrihost.com/en/login");
+            } else if(command.includes("open poe ai")){
+                response ="Opening Poe AI Sir ";
+                window.open("https://poe.com/");
+            } else if(command.includes("open onedrive")){
+                response = "Opening OneDrive";
+                window.open("https://studentspctrainingedu-my.sharepoint.com/");
+            } else if(recognizeCommand(command, commands.whatsapp)) {
+                response = "Opening WhatsApp Web, Sir";
+                window.open("https://web.whatsapp.com/");
+            } else if(recognizeCommand(command, commands.Mathpapa)) {
+                response = "Opening mathpapa, Sir";
+                window.open("https://www.mathpapa.com/algebra-calculator.html");
+            }
+            else if(recognizeCommand(command, commands.stealthWriter)) {
+                response = "Opening StealthWriter, Sir";
+                window.open("https://app.stealthwriter.ai/humanizer");
+            }
+            else if(recognizeCommand(command, commands.Drawio)) {
+                response = "Opening draw.io, Sir";
+                window.open("https://app.diagrams.net/");
+            } else if(recognizeCommand(command, commands.canva)) {
+                response = "Opening Canva, Sir";
+                window.open("https://www.canva.com/en/login/transfer/?target=ELECTRON");
+            }else if(recognizeCommand(command, commands.Zoom)) {
+                response = "Opening Zoom, Sir";
+                window.open("https://zoom.us/join");
+            }else if(recognizeCommand(command,commands.pdfdrive)){
+                response = "Opening PDFDrive, Sir";
+                window.open("https://www.pdfdrive.com/");
+            } else if(command.includes("open loveable ai")){
+                response = "Opening Loveable AI Sir";
+                window.open("https://lovable.dev/");
+            }
+            else if(command.includes("open bolt")){
+                response = "Opening Bolt Sir";
+                window.open("https://bolt.new/");
+            }else if(command.includes("open ai studio")){
+                response = "Opening Google AI studio Sir";
+                window.open("https://aistudio.google.com/prompts/new_chat");
+            }else if(recognizeCommand(command,commands.trackAndroid)){
+                response = "Finding phone Sir ";
+                window.open("https://www.google.com/android/find/about");
+            } else if(recognizeCommand(command,commands.trackIphone)){
+                response = "Finding phone sir";
+                window.open("https://www.icloud.com/find/");
+            } else if(command.includes("open tiktok")){
+                response = "opening tiktok Sir";
+                window.open("https://www.tiktok.com/@shivs_47");
+            } else if(command.includes("open chatedu")){
+                response = "Opening chatedu,Sir";
+                window.open("https://chatedu.io/en/onboarding/upload?courseId=012948de-50c6-4214-9847-4ea0e6f500fb");
+            } else if(command.includes("open linkedin portal")){
+                response = "opening LinkedIN sir";
+                window.open("https://www.linkedin.com/feed/");
+            } else if(command.includes("open zety")){
+                response = "Opening Zety sir";
+                window.open("https://zety.com/lp/cv-maker");
+            } else if(command.includes("open career.io")){
+                response = "Opening career.io sir";
+                window.open("https://career.io/app");
+            }else if(command.includes("open flowcv")){
+                response = "Opening FlowCV sir";
+                window.open("https://flowcv.com/");
+            }else if(command.includes("open gamma")){
+                response = "Opening Gamma sir";
+                window.open("https://gamma.app/");
+            } else if(command.includes("open globe explorer")){
+                response = "Opening Globe Explorer, Sir";
+                window.open("https://explorer.globe.engineer/");
+            } else if(command.includes("open magic pattern")){
+                response = "Opening Magic Pattern sir";
+                window.open("https://www.magicpatterns.com/dashboard");
+            } else if(command.includes("open consensus")){
+                response = "Opening Consensus sir";
+                window.open("https://consensus.app/");
+            } else if(command.includes("open remote rocketship")){
+                response = "Opening Remote rocketship sir";
+                window.open("https://www.remoterocketship.com/?page=1&sort=DateAdded");
+            } else if(command.includes("open commontools")){
+                response = "Opening CommonTools sir";
+                window.open("https://www.commontools.org/");
+            } else if(command.includes("open stayingfun")){
+                response = "Opening StayingFun sir";
+                window.open("https://staying.fun/en");
+            } else if(command.includes("open pinetools")){
+                response = "Opening Pinetools sir";
+                window.open("https://pinetools.com/");
+            } 
+            else if(command.includes("open 123apps")){
+                response = "Opening 123apps sir";
+                window.open("https://123apps.com/");
+            } 
+            else if(command.includes("open reactbits")){
+                response = "Opening Reactbits sir";
+                window.open("https://reactbits.dev/text-animations/split-text");
+            }
+            else if(command.includes("open rosebud")){
+                response = "Opening Rosebud.ai sir";
+                window.open("https://rosebud.ai/");
+            }
+            else if(command.includes("open workingnomads")){
+                response = "Opening WorkingNomads sir";
+                window.open("https://www.workingnomads.com/jobs");
+            }
+            else if(command.includes("open magic eraser")){
+                response = "Opening Magic Eraser sir";
+                window.open("https://magiceraser.pro/");
+            }
+            else if(command.includes("open storyteller")){
+                response = "Opening Story Teller sir";
+                window.open("https://storyteller.mootion.com/workspace/generate");
+            }
+            else if(command.includes("open voicenotes")){
+                response = "Opening voicenotes for you Sir";
+                window.open("https://voicenotes.com/app");
+            }
+            else if(command.includes("open theres an aifor that")){
+                response = "Opening there's an ai for that sir";
+                window.open("https://free.theresanaiforthat.com/");
+            }
+            else if(command.includes("open biodigital")){
+                response = "Opening biodigital sir";
+                window.open("https://human.biodigital.com/explore");
+            }
+            else if(command.includes("open class central")){
+                response = "Opening class central sir";
+                window.open("https://www.classcentral.com/");
+            }
+            else if(command.includes("open chronas")){
+                response = "Opening chronas sir";
+                window.open("https://www.chronas.org/");
+            }
+            else if(command.includes("open no more copyright")){
+                response = "Opening no more copy right sir";
+                window.open("https://nomorecopyright.com/");
+            }
+            else if(command.includes("open learn anything")){
+                response = "Opening learn anything sir";
+                window.open("https://learn-anything.xyz/");
+            }
+            else if(command.includes("open wallhaven")){
+                response = "Opening wallhaven sir";
+                window.open("https://wallhaven.cc/");
+            }
+            else if(command.includes("open symbolab")){
+                response = "Opening symbolab sir";
+                window.open("https://www.symbolab.com/");
+            }
+            else if(command.includes("open womp")){
+                response = "Opening womp sir";
+                window.open("https://beta.womp.com/discover");
+            }
+            else if(command.includes("open magicloops")){
+                response = "Opening magicloops sir";
+                window.open("https://magicloops.dev/");
+            }
+            else if(recognizeCommand(command, commands.solvely)) {
+                response = "Opening Solvely, Sir";
+                window.open("https://solvely.ai/quiz/home");
+            }
+            else if(recognizeCommand(command, commands.owll)) {
+                response = "Opening Owll, Sir";
+                window.open("https://owll.ai/dashboard");
+            }else if(recognizeCommand(command, commands.notability)) {
+                response = "Opening Notability, Sir";
+                window.open("https://notability.com/app/");
+            }
+             else {
+                response = "I didn't quite catch that, please try again.";
+            }
+
+            readOut(response);
+            outputDiv.innerHTML += `<p>${response.replace(/\n/g, '<br>')}</p>`;
+        }
+
+        // Event listeners
+        recognition.onstart = () => console.log("VR active");
+        recognition.onresult = (event) => {
+            let transcript = sanitizeInput(event.results[event.resultIndex][0].transcript);
+            inputText.value = transcript;
+            processCommand(transcript);
+        };
+        recognition.onend = () => console.log("VR deactivated");
+
+        startBtn.addEventListener("click", () => recognition.start());
+        speakBtn.addEventListener("click", () => readOut("Hi there, I am PVA, designed by Mr. Sewnarain. How may I be of service?"));
+        inputText.addEventListener("keydown", (event) => {
+            if (event.key === 'Enter') {
+                let sanitizedInput = sanitizeInput(inputText.value);
+                processCommand(sanitizedInput);
+                inputText.value = '';
+            }
+        });
     </script>
 </body>
 </html>
