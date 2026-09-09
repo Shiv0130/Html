@@ -1513,8 +1513,8 @@
         <div class="suggestions-container">
             <div class="suggestions-title">Try saying:</div>
             <div class="suggestions-grid">
-                <div class="suggestion-item" data-command="hello pva">👋 Hello PVA</div>
-                <div class="suggestion-item" data-command="what time is it">⏰ What time is it</div>
+                <div class="suggestion-item" data-command="open pdf summarizer">📖 Open Smallpdf</div>
+                <div class="suggestion-item" data-command="open github"> 💻Open Github</div>
                 <div class="suggestion-item" data-command="what's the weather">🌤️ What's the weather</div>
                 <div class="suggestion-item" data-command="open youtube">📺 Open YouTube</div>
                 <div class="suggestion-item" data-command="open moodle">🎓 Open Moodle</div>
@@ -1525,6 +1525,8 @@
                 <div class="suggestion-item" data-command="open gmail">📧 Open Gmail</div>
                 <div class="suggestion-item" data-command="what can you do">❓ What can you do</div>
                 <div class="suggestion-item" data-command="open google scholar">📚 Open Google Scholar</div>
+                <div class = "suggestion-item" data-command=" open turbo">Open Turbo🚀 </div>
+                <div class = "suggestion-item" data-command=" open leadde">Open Leadde📽️</div>
             </div>
         </div>
 
@@ -1623,6 +1625,8 @@
             trackIphone: ["Find my iPhone","find my iphone","Where's my iPhone","Find iPhone"],
             solvely: ["open solvely", "solvely", "math solver", "take a picture math solver"],
             owll: ["open owll", "owll", "owll ai"],
+            turbo:["open turbo","open turbo ai","turbo","Turbo","turbo ai"],
+            Leadde:["open leadde","Open Leadde","Leadde","leade","leadde ai"],
             notability: ["open notability","notability","notability ai"]
         };
 
@@ -1758,7 +1762,9 @@
                 window.open("https://www.google.co.za/?gws_rd=ssl");
             } else if (command.includes("open moodle")) {
                 response = "Opening Moodle Sir";
-                window.open("https://learning.richfield.ac.za/HET/login/index.php");
+                //window.open("https://learning.richfield.ac.za/HET/login/index.php");
+                //temp moodle login
+                window.open("https://learning.richfield.ac.za/my/index.php");
             } else if (recognizeCommand(command, commands.checkMarks)) {
                 response = "Opening Richfield iEnabler Sir";
                 window.open("https://rgitie.richfield.ac.za/pls/rgitp/w99pkg.mi_login");
@@ -1938,8 +1944,22 @@
             }else if(recognizeCommand(command, commands.notability)) {
                 response = "Opening Notability, Sir";
                 window.open("https://notability.com/app/");
-            }
-             else {
+            }else if(command.includes("open github")){
+                response = "opening github sir";
+                window.open("https://github.com/"); //store in array
+            } else if (command.includes("open pdf summarizer")) {
+                response = "Opening PDF Summarizer, Sir";
+                window.open("https://smallpdf.com/ai-pdf"); // store in array
+            } else if(command.includes("open ilovepdf")) {
+                response = "Opening ILovePDF,Sir";
+                window.open("https://www.ilovepdf.com/");
+            }else if(command,commands.turbo){
+                response = "opening Turbo AI,sir";
+                window.open("https://www.turbo.ai/dashboard");
+            }else if(command,commands.Leadde){
+                response = "Opening Leadde AI, Sir";
+                window.open("https://app.leadde.ai/home");
+            } else {
                 response = "I didn't quite catch that, please try again.";
             }
 
